@@ -1,5 +1,7 @@
 import numpy as np
 import random
+from collections import defaultdict
+import os
 
 class Tile:
     def __init__(self):
@@ -21,7 +23,9 @@ class Gridworld:
         self.initialize()
         self.reset()
 
-    def initialize(self, size = 5, seed = 3):
+    def initialize(self, size = 50, seed = 3):
+
+        self.size = size
 
         random.seed(seed)
         np.random.seed(seed)
@@ -42,6 +46,7 @@ class Gridworld:
         tiles = np.empty((size, size), dtype = object)
         tiles[:,:] = Tile()
 
+        self.Q_table = defaultdict(lambda: int(1))
 
     def reset(self):
         self.agent_location = Gridworld.agent_starting_location
@@ -50,7 +55,21 @@ class Gridworld:
         pass
 
     def visualize(self):
-        print(self.grid)
+        #print(self.grid)
+
+        #clear screen
+        if os.name == 'posix': #Linux, Mac
+            os.system('clear')
+        else: #Windows
+            os.system('cls')
+
+        symbol_map = {0: " ", 1: "\u2588", 2: "t", 3: "\u2622"}
+
+        for x in range(self.size):
+            for y in range(self.size):
+                print(symbol_map.get(self.grid[x, y], "?"), end = "")
+            print()
+            #print("\n", "-" * self.size * 2, sep = "")
 
     def get_tile_at(self, coordinates):
         return self.tiles[coordinates[0],coordinates[1]]
