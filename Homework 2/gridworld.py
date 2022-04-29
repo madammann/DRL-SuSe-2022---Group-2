@@ -4,27 +4,35 @@ from collections import defaultdict
 import os
 
 class Tile:
+    '''The tile class which contains a move method and necessary attributes for implemented functionalities.'''
     def __init__(self):
         self.obstructed = False
         self.options = [True, True, True, True]
         self.transition_prob = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
         self.reward = 0
 
-    def get_reward(self):
-        pass
-
     def move(self, action):
-        pass
+        '''Calculates a delta for the position of the agent based on choice (0-3 int).'''
+        if self.options[action]:
+            chance = random.random()
+            if self.transition_prob[action][0] >= chance:
+                return (0,1) # go up
+            elif self.transition_prob[action][1] >= chance:
+                return (1,0) # go right
+            elif self.transition_prob[action][2] >= chance:
+                return (0,-1) # go down
+            elif self.transition_prob[action][3] >= chance:
+                return (-1,0) # go left
+    
+    def get_possible(self, choice):
+        '''Returns True if a choice (0-3 int) is possible on this tile.'''
+        return self.options[choice]
 
 class Gridworld:
     agent_starting_location = (0,0)
 
-    def __init__(self):
-        self.initialize()
-        self.reset()
-
-    def initialize(self, size = 50, seed = 3):
-
+    def __init__(self, size = 50, seed = 3):
+        
         self.size = size
 
         random.seed(seed)
@@ -39,12 +47,61 @@ class Gridworld:
         self.grid = np.asarray(random.choices(population = (0,1,3,4), weights = rnd_weights, k = size**2)).reshape(size, size)
         self.grid[Gridworld.agent_starting_location] = 0
 
-        #set target locarion
+        #set target location
         self.grid[np.random.randint(size/2,size), np.random.randint(size/2,size)] = 2
 
-
-        tiles = np.empty((size, size), dtype = object)
-        tiles[:,:] = Tile()
+        #generating wind direction
+        wind = random.randint(0,3)
+        
+        '''Creating a transition probability array for wind coming from above, then rotating it to wind direction'''
+        wind_prob = np.array([[0.4,0.25,0.1,0.25],[0,0.7,0.3,0],[0,0,1,0],[0,0,0.3,0.7]])
+        if wind > 0:
+            wind_prob = np.rot90(wind_prob, k=wind)
+        
+        #generating tile class objects
+        self.tiles = np.empty((size, size), dtype = object)
+        for x in range(self.size):
+            for y in range(self.size):
+                '''Create tile instance for the field'''
+                self.tiles[x][y] = Tile()
+                
+                '''Case handler for handling moving options due to board edge'''
+                options = [True, True, True, True]
+                if x+1 >= self.size:
+                    options[1] = False
+                if x-1 < 0:
+                    options[3] = False
+                if y+1 >= self.size:
+                    options[0] = False
+                if y-1 < 0:
+                    options[2] = False
+                
+#                 '''Case handler for handling moving options due to obstruction'''
+#                 if options[0]:
+#                     if self.grid[x][y+1] == 2:
+#                         options[0] = False
+#                 if options[1]:
+#                     if self.grid[x+1][y] == 2:
+#                         options[1] = False
+#                 if options[2]:
+#                     if self.grid[x][y-1] == 2:
+#                         options[2] = False
+#                 if options[3]:
+#                     if self.grid[x-1][y] == 2:
+#                         options[3] = False
+                
+                '''Setting the options for the tile'''
+                self.tiles[x][y].options = options
+                
+                '''Case handler for all possible types of tiles in the grid'''
+                if self.grid[x][y] == 1:
+                    self.tiles[x][y].obstructed = True
+                elif self.grid[x][y] == 2:
+                    self.tiles[x][y].reward = random.randint(1,5)
+                elif self.grid[x][y] == 3:
+                    self.tiles[x][y].reward = -random.random()
+                elif self.grid[x][y] == 4:
+                    self.tiles[x][y].transition_prob = wind_prob
 
         self.Q_table = defaultdict(lambda: int(1))
 
@@ -55,7 +112,6 @@ class Gridworld:
         pass
 
     def visualize(self):
-        #print(self.grid)
 
         #clear screen
         if os.name == 'posix': #Linux, Mac
@@ -69,13 +125,20 @@ class Gridworld:
             for y in range(self.size):
                 print(symbol_map.get(self.grid[x, y], "?"), end = "")
             print()
-            #print("\n", "-" * self.size * 2, sep = "")
+#             print("\n", "-" * self.size * 2, sep = "")
 
     def get_tile_at(self, coordinates):
         return self.tiles[coordinates[0],coordinates[1]]
 
-    def prove_solvable(self):
-        pass
+    def prove_solvable(self, location=(0,0)):
+        neighbors = [(location[0]+1,location[1]),(location[0]-1,location[1]),(location[0],location[1]+1),(location[0],location[1]-1)]
+        if any([self.get_tile_at(coord).reward > 0 for coord in neighbors]):
+            return True # returns true if the positive reward is in the neighborhood
+        else:
+            for neighbor in neighbors:
+                if not self.get_tile_at(neighbor).obstructed:
+                    self.prove_solvable(location=neighbor) 
+            return False # returns false if running out of neighbor options
 
 class Agent:
     def __init__(self):
@@ -86,7 +149,3 @@ class Agent:
 
 def SARSA(n):
     pass
-
-
-world = Gridworld()
-world.visualize()
