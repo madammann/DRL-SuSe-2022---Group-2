@@ -165,8 +165,13 @@ class Agent:
 
         self.location += np.array(current_tile.move(action))
 
-def SARSA(n):
-    pass
+def SARSA(agent, world, n):
+    rewards = []
+    for _ in range(n):
+        rewards += [agent.action()] #also implement current location
+#     rewards += [q_val_at_last_action]
+    q_val = np.sum([rewards[i]*np.pow(0.98,i) for i in range(len(rewards))])
+    agent.update_q_value()
 
 world = Gridworld()
 #world.prove_solvable()
