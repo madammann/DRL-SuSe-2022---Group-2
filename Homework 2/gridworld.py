@@ -13,16 +13,16 @@ class Tile:
 
     def move(self, action):
         '''Calculates a delta for the position of the agent based on choice (0-3 int).'''
-        #Todo: check possiblity of delta movement, rework choice system
+        #Todo: maybe check possiblity of delta movement
         if self.options[action]:
             chance = random.random()
             if self.transition_prob[action][0] >= chance:
                 return (0,1) # go up
-            elif np.sum(self.transition_prob[action][:1]) >= chance:
-                return (1,0) # go right
             elif np.sum(self.transition_prob[action][:2]) >= chance:
-                return (0,-1) # go down
+                return (1,0) # go right
             elif np.sum(self.transition_prob[action][:3]) >= chance:
+                return (0,-1) # go down
+            elif np.sum(self.transition_prob[action][:4]) >= chance:
                 return (-1,0) # go left
 
 class Gridworld:
@@ -99,14 +99,12 @@ class Gridworld:
                     self.tiles[x][y].transition_prob = wind_prob
 
     def reset(self):
-        self.location = (0,0)
+        self.agent_location = (0,0)
 
     def step(self, action):
-        self.agent_location += self.get_tile_at(self.agent_location).move(action)
-        terminal = self.grid[self.agent_location] == 2
+        self.agent_location += np.array(self.get_tile_at(self.agent_location).move(action))
+        terminal = self.grid[self.agent_location[0]][self.agent_location[1]] == 2
         return self.agent_location, self.get_tile_at(self.agent_location).reward, terminal
-
-        return state, reward, terminal
 
     def visualize(self, agent):
 
@@ -119,7 +117,7 @@ class Gridworld:
         symbol_map = {0: " ", 1: "\u2588", 2: "t", 3: "\u2622", 9: "a"}
 
         visualization_grid = np.array(self.grid) #deep copy, as to not change the grid array
-        visualization_grid[agent.location[0],agent.location[1]] = 9 #include agent's position
+        visualization_grid[self.agent_location[0]][self.agent_location[1]] = 9 #include agent's position
 
         for x in range(self.size):
             for y in range(self.size):
@@ -133,21 +131,33 @@ class Gridworld:
     def update_q_value(self,location, action, value):
         pass
 
-    # def prove_solvable(self, location=(0,0), visited=[]):
-    #     #Todo: avoid forever-loop, maybe include tile-checked-flag
-    #     neighbors = [(location[0]+1,location[1]),(location[0]-1,location[1]),(location[0],location[1]+1),(location[0],location[1]-1)]
-    #     if any([self.get_tile_at(coord).reward > 0 for coord in neighbors]):
-    #         return True # returns true if the positive reward is in the neighborhood
-    #     else:
-    #         for neighbor in neighbors:
-    #             if not self.get_tile_at(neighbor).obstructed:
-    #                 self.prove_solvable(location=neighbor,visited=visited)
-    #         return False # returns false if running out of neighbor options
+    def prove_solvable(self, location=(0,0), visited=[]):
+        neighbors = [(location[0]+1,location[1]),(location[0]-1,location[1]),(location[0],location[1]+1),(location[0],location[1]-1)]
+        to_check = []
+
+        for neighbor in neighbors:
+            if neighbor in visited:
+                continue
+            else:
+                if neighbor[0] < 0 or neighbor[0] >= self.size or neighbor[1] < 0 or neighbor[1] >= self.size: #check whether neighbor location is inside gridworld border coordinates
+                    continue
+            to_check.append(neighbor)
+
+        visited.extend(to_check)
+
+        if any([self.get_tile_at(coord).reward > 0 for coord in to_check]):
+            return True, visited # returns true if the positive reward is in the neighborhood
+        else:
+            for neighbor in to_check:
+                if not self.get_tile_at(neighbor).obstructed:
+                    solvable, visited = self.prove_solvable(location=neighbor,visited=visited)
+                    if solvable: #one True return [0] in recursion is enough to have a solvable gridworld
+                        return True, visited
+            return False, visited # returns false if running out of neighbor options
 
 class Agent:
     def __init__(self, world):
-        self.location = Gridworld.agent_location
-        self.Q_table = np.ones((world.size, world.size, len(Agent.actions)))
+        self.Q_table = np.ones((world.size, world.size, 4)) #4 possible actions (max)
         self.world = world
         self.reward = 0
         self.terminal = False
@@ -155,7 +165,7 @@ class Agent:
     def action(self, epsilon=0.1):
         if not self.terminal:
             #for now, acion is chosen probabilistically based on Q-values
-            current_tile = self.world.get_tile_at(self.location)
+            current_tile = self.world.get_tile_at(self.world.agent_location)
             options = np.multiply(np.array(current_tile.options,dtype='int32'),np.array([1,2,3,4]))
             options = options[options != 0] - 1 #minus 1 for converting to index
             action = None
@@ -163,8 +173,8 @@ class Agent:
             if random.random() < epsilon:
                 action = random.choice(options)
             else:
-                q_values = self.Q_table[self.location[0], self.location[1], :]
-                action = [element for element in np.argsort(q_values)[::-1] if element in options]
+                q_values = self.Q_table[self.world.agent_location[0], self.world.agent_location[1], :]
+                action = [element for element in np.argsort(q_values)[::-1] if element in options][0]
 
             state, reward, terminal = self.world.step(action)
 
@@ -175,7 +185,7 @@ class Agent:
             return action
 
     def reset():
-        self.location = (0,0)
+        self.world.agent_location = (0,0)
         self.reward = 0
         self.cumulative_reward = 0
         self.terminal = False
@@ -205,8 +215,12 @@ def SARSA(agent, world, n=10):
     q_val = np.sum([rewards[i]*np.pow(0.98,i) for i in range(len(rewards))])
     agent.update_q_value(location, action, value)
 
-world = Gridworld()
-#world.prove_solvable()
+#Create solvable gridworld
+for world_seed in range(3, 100):
+    world = Gridworld(seed = world_seed)
+    if world.prove_solvable()[0] == True:
+        break
+
 agent = Agent(world)
 
 world.visualize(agent)
