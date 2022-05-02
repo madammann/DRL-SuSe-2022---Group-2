@@ -178,10 +178,10 @@ class Agent:
         self.world.agent_location = (0,0)
         self.reward = 0
         self.terminal = False
-        
+
     def update_q_value(self, location, value):
         self.Q_table[location] = value
-        
+
 def SARSA(agent, world, n=10, gamma=0.98, alpha=0.1):
     if type(n) == int:
         if not n > 0:
@@ -196,20 +196,20 @@ def SARSA(agent, world, n=10, gamma=0.98, alpha=0.1):
         actions += [agent.action()]
         states += [(agent.location[0],agent.location[1])]
         rewards += [agent.reward]
-        
+
         '''Update the Q-table as soon as n is exceeded by actions or the terminal state is reached'''
-        if n > len(actions) or agent.terminal:
+        if n < len(actions) or agent.terminal:
             if not agent.terminal:
                 '''Retrieving location for the update and calculating new q value'''
                 location = (states[0][0],states[0][1],actions[0]) #the location for the update which is the first element of states and actions always
                 q_value = agent.Q_table[location] #get current q-value
-                
+
                 end_location = (states[-1][0],states[-1][1],actions[-1])
                 reward_chain = rewards[0:n-1]+[agent.Q_table[end_location]] #creating the reward chain for n steps with the last step as q-value
-                
+
                 q_delta = alpha*(np.sum([reward_chain[i]*np.power(gamma,i) for i in range(len(reward_chain))]) - q_value)
                 agent.update_q_value(location, q_value+q_delta) #updating the value in the Q-table
-                
+
                 '''Deleting the first element since the update has been done'''
                 states = states[1:]
                 actions = actions[1:]
@@ -220,11 +220,11 @@ def SARSA(agent, world, n=10, gamma=0.98, alpha=0.1):
                     '''Retrieving location for the update and calculating new q value'''
                     location = (states[0][0],states[0][1],actions[0]) #the location for the update which is the first element of states and actions always
                     q_value = agent.Q_table[location] #get current q-value
-                
+
                     q_delta = alpha*(np.sum([rewards[i]*np.power(gamma,i) for i in range(len(rewards))]))
-                
+
                     agent.update_q_value(location, q_value+q_delta) #updating the value in the Q-table
-                
+
                     '''Deleting the first element since the update has been done'''
                     states = states[1:]
                     actions = actions[1:]
@@ -236,7 +236,7 @@ for world_seed in range(3, 100):
     world = Gridworld(seed = world_seed)
     if world.prove_solvable()[0] == True:
         break
-        
+
 agent = Agent(world)
 
 '''Visualizing the Gridworld once to show '''
@@ -258,12 +258,12 @@ while not value.isnumeric():
     print('Value not allowed, please select another value for n!')
     print('\n')
     value = input('Please select a value for n which is a number greater than 0: ')
-        
+
 for episode in tqdm(range(1000),desc='Doing SARSA Episodes'):
     SARSA(agent, world, n=int(value))
     agent.reset()
     world.reset()
-    
+
 print('\n')
 print('======================')
 print('Q-Table (x,y,action):')
@@ -284,4 +284,3 @@ while not agent.terminal:
     agent.action(epsilon=0)
     world.visualize(agent)
     print('\n')
-    
