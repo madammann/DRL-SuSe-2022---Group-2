@@ -15,15 +15,17 @@ class Tile:
     def move(self, action):
         '''Calculates a delta for the position of the agent based on choice (0-3 int).'''
         if self.options[action]:
-            chance = random.random()
-            if self.transition_prob[action][0] >= chance:
-                return (0,1) # go up
-            elif np.sum(self.transition_prob[action][:2]) >= chance:
-                return (1,0) # go right
-            elif np.sum(self.transition_prob[action][:3]) >= chance:
-                return (0,-1) # go down
-            elif np.sum(self.transition_prob[action][:4]) >= chance:
-                return (-1,0) # go left
+            '''For practical purposes we iterate until we randomly find an option which is both doable and based on transition probability.'''
+            while True:
+                chance = random.random()
+                if self.transition_prob[action][0] >= chance and self.options[0]:
+                    return (0,1) # go up
+                elif np.sum(self.transition_prob[action][:2]) >= chance and self.options[1]:
+                    return (1,0) # go right
+                elif np.sum(self.transition_prob[action][:3]) >= chance and self.options[2]:
+                    return (0,-1) # go down
+                elif np.sum(self.transition_prob[action][:4]) >= chance and self.options[3]:
+                    return (-1,0) # go left
 
 class Gridworld:
     def __init__(self, size = 5, seed = 3):
@@ -34,7 +36,7 @@ class Gridworld:
         np.random.seed(seed)
 
         '''Generating Gridworld with weights for tile proportions'''
-        rnd_weights = np.array([0.5, 0.2, 0.1, 0])
+        rnd_weights = np.array([0.8, 0.4, 0.1, 0.05])
         rnd_weights /= rnd_weights.sum() #sum of weights should be 1
 
         #0:free space, 1:wall, 2:target, 3:toxic, 4:wind
@@ -102,7 +104,7 @@ class Gridworld:
         return self.agent_location, self.get_tile_at(self.agent_location).reward, terminal
 
     def visualize(self, agent):
-        symbol_map = {0: " ", 1: "\u2588", 2: "t", 3: "\u2622", 9: "a"}
+        symbol_map = {0: " ", 1: "\u2588", 2: "t", 3: "\u2622", 4: "w", 9: "a"}
 
         visualization_grid = np.array(self.grid) #deep copy, as to not change the grid array
         visualization_grid[self.agent_location[0]][self.agent_location[1]] = 9 #include agent's position
@@ -158,7 +160,11 @@ class Agent:
                 action = random.choice(options)
             else:
                 q_values = self.Q_table[self.world.agent_location[0], self.world.agent_location[1], :]
-                action = [element for element in np.argsort(q_values)[::-1] if element in options][0]
+                actions = [element for element in np.argsort(q_values)[::-1] if element in options]
+                if q_values[actions[0]] != q_values[actions[1]]:
+                    action = actions[0] #select action with highest q-value
+                else:
+                    action = random.choice([actions[0],actions[1]]) #chose random action between highest two q-values if both are equally high
 
             state, reward, terminal = self.world.step(action)
 
@@ -202,7 +208,6 @@ def SARSA(agent, world, n=10, gamma=0.98, alpha=0.1):
                 reward_chain = rewards[0:n-1]+[agent.Q_table[end_location]] #creating the reward chain for n steps with the last step as q-value
                 
                 q_delta = alpha*(np.sum([reward_chain[i]*np.power(gamma,i) for i in range(len(reward_chain))]) - q_value)
-                
                 agent.update_q_value(location, q_value+q_delta) #updating the value in the Q-table
                 
                 '''Deleting the first element since the update has been done'''
