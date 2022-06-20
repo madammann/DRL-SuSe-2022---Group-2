@@ -4,27 +4,44 @@ from tqdm import tqdm
 import gym
 
 lunar_lander_env = gym.make(
-    "LunarMander-v2",
-    continuous: bool = False,
-    gravity: float = -10.0,
-    enable_wind: bool = False,
-    wind_power: float = 15.0,
-    turbulance_power: float = 1.5
+    "LunarLander-v2",
+    continuous=False,
+    gravity=-10.0,
+    enable_wind=False,
+    wind_power=15.0,
+    #turbulence_power=1.5
 )
 
-episode_losses = []
 
-# # PSEUDO FOR NOW!
-# def training(model, episodes=1000):
-#     for k in tqdm(range(episodes),desc='Episode progress: '):
-#         env = None # create env in its starting state
-#         while not env.terminal:
-#             observation = env.observation
-#             # processing?
-#             output = model(observation)
-#             # processing? (argmax)
-#             env.action(output)
-#             #replay buffer in here?
-#             #adjust weights
-#             #store loss somewhere
-#         # get mean loss and store
+def run_agent(steps=1000):
+    observation, info = lunar_lander_env.reset(return_info=True)
+
+    for step in tqdm(range(steps)):
+        lunar_lander_env.render()
+        # action = policy(observation)  # User-defined policy function
+        # TODO: Use model to get agent action
+        observation, reward, terminal, info = lunar_lander_env.step(lunar_lander_env.action_space.sample())
+
+        if terminal:
+            observation, info = lunar_lander_env.reset(return_info=True)
+
+
+def training(model, episodes=1000):
+    episode_losses = []
+    observation, info = lunar_lander_env.reset(return_info=True)
+    terminal = False
+
+    for k in tqdm(range(episodes),desc='Episode progress: '):
+        while not terminal:
+            lunar_lander_env.render()
+            # processing?
+            #output = model(observation)
+            #action = argmax(output)
+            observation, reward, terminal, info = lunar_lander_env.step(action)
+            # replay buffer in here?
+            # adjust weights
+            # store loss somewhere
+        # get mean loss and store
+
+
+run_agent()
