@@ -13,35 +13,44 @@ lunar_lander_env = gym.make(
 )
 
 
-def run_agent(steps=1000):
+def run_random_agent(steps=1000):
     observation, info = lunar_lander_env.reset(return_info=True)
 
     for step in tqdm(range(steps)):
         lunar_lander_env.render()
         # action = policy(observation)  # User-defined policy function
-        # TODO: Use model to get agent action
         observation, reward, terminal, info = lunar_lander_env.step(lunar_lander_env.action_space.sample())
 
         if terminal:
             observation, info = lunar_lander_env.reset(return_info=True)
 
 
-def training(model, episodes=1000):
+def training(model, episodes=1000, update_frequency = 0.1):
+    erbuffer = ExperienceReplayBuffer()
     episode_losses = []
     observation, info = lunar_lander_env.reset(return_info=True)
     terminal = False
+    step = 0
 
     for k in tqdm(range(episodes),desc='Episode progress: '):
         while not terminal:
+            step += 1
             lunar_lander_env.render()
             # processing?
-            #output = model(observation)
-            #action = argmax(output)
-            observation, reward, terminal, info = lunar_lander_env.step(action)
-            # replay buffer in here?
-            # adjust weights
-            # store loss somewhere
+            output = model.predict(observation)
+            action = argmax(output)
+            observation_new, reward, terminal, info = lunar_lander_env.step(action)
+            erbuffer.append(oberservation, action, reward, obersavtion_new, terminal)
+
+            if step % (1/update_frequency):
+                #Train model with a batch from Replay Buffer
+                model.learn(erbuffer.sampling())
+                # store loss somewhere
+
+            observation = observation_new
+
         # get mean loss and store
 
-
-run_agent()
+#agent = LunarLanderModel()
+#training(agent)
+run_random_agent()
