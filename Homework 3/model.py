@@ -15,9 +15,9 @@ class ExperienceReplayBuffer:
         self.memory = deque(maxlen=size_replaybuffer) 
         pass
     
-    def append(self, state, action, reward, next_state):
+    def append(self, state, action, reward, next_state, terminal):
         # appending
-        new_experience = (state, action, reward, next_state)
+        new_experience = (state, action, reward, next_state, terminal)
         self.memory.append(new_experience)
 
         pass

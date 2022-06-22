@@ -36,10 +36,11 @@ def training(model, episodes=1000, update_frequency = 0.1):
         while not terminal:
             step += 1
             lunar_lander_env.render()
-            # processing?
+            # get action via DQN
             output = model.predict(observation)
             action = argmax(output)
             observation_new, reward, terminal, info = lunar_lander_env.step(action)
+            #store experience for training
             erbuffer.append(oberservation, action, reward, obersavtion_new, terminal)
 
             if step % (1/update_frequency):
