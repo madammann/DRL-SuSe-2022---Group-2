@@ -25,6 +25,10 @@ def run_random_agent(steps=1000):
             observation, info = lunar_lander_env.reset(return_info=True)
 
 
+def do_episode(model):
+    pass
+
+
 def training(model, episodes=1000, update_frequency = 0.1):
     erbuffer = ExperienceReplayBuffer()
     episode_losses = []
