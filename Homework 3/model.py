@@ -29,7 +29,7 @@ class ExperienceReplayBuffer:
         Method for appending an element to the memory of the replay buffer.
         Follows first-in-first-out scheme for appending elements if the memory size is exceeded.
         
-        :param element (list): A list of (s,a,r,s_prime) to append to the memory.
+        :param element (list): A list of [s,a,r,s_prime] to append to the memory.
         '''
         
         if len(element) == 4 and type(element) == list:
@@ -72,10 +72,10 @@ class LunarLanderModel(tf.keras.Model):
         '''
         
         super(LunarLanderModel, self).__init__()
-        self.input_layer = tf.keras.layers.Dense(units=5) # may need different number
-        self.hidden = tf.keras.layers.Dense(units=20)
-        self.hidden2 = tf.keras.layers.Dense(units=20)
-        self.output_layer = tf.keras.layers.Dense(units=4) # may need different number
+        self.input_layer = tf.keras.layers.Dense(units=5, activation='relu') # may need different number
+        self.hidden = tf.keras.layers.Dense(units=20, activation='relu')
+        self.hidden2 = tf.keras.layers.Dense(units=20, activation='relu')
+        self.output_layer = tf.keras.layers.Dense(units=4, activation='relu') # may need different number and definitely another activation
         
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
         self.loss = None # to be implemented or maybe customized in training.py
