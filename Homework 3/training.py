@@ -36,9 +36,9 @@ def visualize_progress(epoch_returns):
     fig, ax = plt.subplots()
     ax.plot(x,y)
     
-    ax.set_title('Reward for each episode')
-    ax.set_ylabel('Episode reward')
-    ax.set_xlabel('Episode')
+    ax.set_title('Model performance over epochs')
+    ax.set_ylabel('Average return per epoch')
+    ax.set_xlabel('Epoch (1000 episodes)')
 
     fig.savefig('./results.png')
     
