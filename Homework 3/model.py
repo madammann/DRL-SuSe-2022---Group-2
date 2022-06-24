@@ -1,7 +1,6 @@
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_datasets as tfds
 
 class ExperienceReplayBuffer:
     '''
@@ -12,7 +11,7 @@ class ExperienceReplayBuffer:
     :att batch_size (int): The size of a return-batch, used later for sampling in batch size.
     '''
     
-    def __init__(self, size = 100000, batch_size = 32):
+    def __init__(self, size = 10000, batch_size = 32):
         '''
         Method for initializing the experience replay buffer.
         
@@ -22,43 +21,43 @@ class ExperienceReplayBuffer:
         
         self.size = size
         self.batch_size = batch_size
-        self.memory = None 
+        self.memory = None
     
     def append(self, element):
         '''
         Method for appending an element to the memory of the replay buffer.
         Follows first-in-first-out scheme for appending elements if the memory size is exceeded.
         
-        :param element (list): A list of [s,a,r,s_prime] to append to the memory.
+        :param element (list): A list of [s,a,r,s_prime,is_terminal] to append to the memory.
         '''
-        
-        if len(element) == 4 and type(element) == list:
-            if not self.memory == None:
-                appendix = np.array(element,dtype='float32')
-                self.memory = np.vstack([memory,appendix])
-            
+        if len(element) == 5 and type(element) == list:
+            if self.memory == None:
+                self.memory = [element]
             else:
-                self.memory = np.array(element,dtype='float32')
-                self.memory = self.memory[-self.size:] # removes all elements from 0:n from memory for n = len(memory) - self.size
-            
+                self.memory.append(element)
+
+            #remove earliest element from list if it gets bigger than indicated by size
+            if len(self.memory) > self.size:
+                self.memory.pop(0)
         else:
-            raise TypeError('The experience replay buffer can only append tuples of size 4.')
+            raise TypeError('The experience replay buffer can only append tuples of size 5.')
 
     def sample(self):
         '''
         Method for sampling self.batch_size elements from memory and returning them in dataset batch form.
         
-        :returns (tf.data.Dataset): A tensorflow dataset slice with shape (batch_size,4).
+        :returns (list): list of size self.batch_size of samples from memory
         '''
         
-        if len(self.memory) > self.batchsize:
+        if len(self.memory) > self.batch_size:
             sample_indices = np.random.choice(np.arange(0, len(self.memory)), self.batch_size, replace=False)
             samples = [self.memory[idx] for idx in sample_indices]
             
-            return tf.data.Dataset.from_tensor_slices(samples)
+            return samples
         
         else:
-            raise AttributeError('A sample was requested but the memory was not yet filled enough to provide one.')
+            return self.memory #TODO: shuffle
+            #raise AttributeError('A sample was requested but the memory was not yet filled enough to provide one.')
 
     
 class LunarLanderModel(tf.keras.Model):
@@ -88,10 +87,12 @@ class LunarLanderModel(tf.keras.Model):
         :param x (tf.Tensor): The input to the model in shape (batch, xyz)
         :returns (tf.Tensor): The final output of the model as tensor of shape (batch, xyz)
         '''
-        
+        if len(x.get_shape().as_list()) < 2:
+            x = tf.expand_dims(x, axis = 0)
+
         x = self.input_layer(x)
         x = self.hidden(x)
         x = self.hidden2(x)
         x = self.output_layer(x)
-        
+
         return x
