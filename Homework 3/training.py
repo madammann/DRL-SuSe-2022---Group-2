@@ -111,7 +111,7 @@ def train_on_buffer(model, samples, discount_factor = 0.9):
         gradient = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradient, model.trainable_variables))
 
-def training(model, episodes=50, pool_size=10, epochs=100):
+def training(model, episodes=100, pool_size=10, epochs=300):
     '''
     ADD
     '''
