@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 
 from tqdm import tqdm
 
+from multiprocessing.pool import ThreadPool
+from copy import deepcopy
+
 import tensorflow as tf
 
 import gym
@@ -44,36 +47,35 @@ def visualize_progress(epoch_returns):
     plt.show()
 
 
-def do_episode(model, buffer, rendering=False):
+def do_episode(model):
     '''
     Function to run a single episode, defined as starting to terminal state, with the model.
     
     :param model (LunarLanderModel): The Deep-Q-Network used as model.
-    :param buffer (ExperienceReplayBuffer): The Experience Replay Buffer to which we want to add samples.
     
-    :returns (int): return of episode (summed rewards until terminal state is reached)
+    :returns (tuple): return of episode (summed rewards until terminal state is reached) and buffer queue as list of elements to append in buffer.
     '''
-    
-    observation, info = lunar_lander_env.reset(return_info=True)
-    terminal = False
+    env = deepcopy(lunar_lander_env)
+    buffer_queue = []
     reward_sum = 0
-
+    
+    # initialize environment
+    observation, info = env.reset(return_info=True)
+    terminal = False
+    
     # while no terminal state is reached we do actions
     while not terminal:
-        if rendering == True:
-            lunar_lander_env.render()
-        
         past_observation = observation
         
         # we input the observation to the model and chose a discrete action by applying the argmax over the output
         policy = model(tf.expand_dims(observation,axis=0))
         action = int(tf.argmax(policy,axis=1))
 
-        observation, reward, terminal, info = lunar_lander_env.step(action)
-        buffer.append([past_observation, action, reward, observation, terminal])
+        observation, reward, terminal, info = env.step(action)
+        buffer_queue += [[past_observation, action, reward, observation, terminal]]
         reward_sum += reward
     
-    return reward_sum
+    return reward_sum, buffer_queue
 
 def train_on_buffer(model, samples, discount_factor = 0.9):
     '''
@@ -109,7 +111,7 @@ def train_on_buffer(model, samples, discount_factor = 0.9):
         gradient = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradient, model.trainable_variables))
 
-def training(model, episodes=500, epochs=100, rendering=False):
+def training(model, episodes=50, pool_size=10, epochs=100):
     '''
     ADD
     '''
@@ -127,18 +129,22 @@ def training(model, episodes=500, epochs=100, rendering=False):
         avg_reward = []
         new_counter = 0
         
-        for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch) + ':'):
-            # we do the training episode
-            reward = do_episode(model, buffer, rendering=rendering)
-        
-            # we store the reward for later statistic analysis
-            avg_reward += [reward]
+        for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch) + '/' + str(epochs) + ':'):
+            # we do n training episodes in multithreading
+            results = ThreadPool(pool_size).map(do_episode,[model for _ in range(pool_size)])
+            
+            # we collect results and append them appropriately to the buffer
+            for i in range(len(results)):
+                for j in range(len(results[i])):
+                    buffer.append(results[i][1][j])
+                    
+                avg_reward += [results[i][0]]
             
             if new_counter > buffer.batch_size:
                 train_on_buffer(model, buffer.sample())
                 new_counter = 0
             else:
-                new_counter += 1
+                new_counter += pool_size
             
         # we take the mean over the epoch and store it
         avg_reward = tf.reduce_mean(avg_reward).numpy()
@@ -151,4 +157,3 @@ epoch_returns = training(model)
 model.save()
 visualize_progress(epoch_returns)
 lunar_lander_env.close()
-
