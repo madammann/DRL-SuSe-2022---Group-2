@@ -1,0 +1,16 @@
+name: LunarLanderDRL
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - numpy
+    - matplotlib
+    - gym
+    - box2d-py
+    - tensorflow
+    - tensorflow-datasets
+    - h5py
+    - tqdm

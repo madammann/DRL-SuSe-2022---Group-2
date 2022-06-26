@@ -44,7 +44,7 @@ def visualize_progress(epoch_returns):
     plt.show()
 
 
-def do_episode(model, buffer, rendering = False):
+def do_episode(model, buffer, rendering=False):
     '''
     Function to run a single episode, defined as starting to terminal state, with the model.
     
@@ -66,11 +66,10 @@ def do_episode(model, buffer, rendering = False):
         past_observation = observation
         
         # we input the observation to the model and chose a discrete action by applying the argmax over the output
-        policy = model(observation)
+        policy = model(tf.expand_dims(observation,axis=0))
         action = int(tf.argmax(policy,axis=1))
 
         observation, reward, terminal, info = lunar_lander_env.step(action)
-        
         buffer.append([past_observation, action, reward, observation, terminal])
         reward_sum += reward
     
@@ -86,29 +85,31 @@ def train_on_buffer(model, samples, discount_factor = 0.9):
     
     with tf.GradientTape() as tape:
 
-        observations = []
+        predictions = []
         targets = []
-
-        for single_experience in samples:
-            observation, action, reward, observation2, terminal = single_experience
+        
+        for datum in samples:
+            observation, action, reward, observation2, terminal = datum
             # retrieve q values of observed state
-            q_values = model(observation).numpy()[0]
+            q_values_pred = model(tf.expand_dims(observation,axis=0))
+            q_values = q_values_pred.numpy()
 
             #compute targeted q value for taken action in observed state via single step q-learning
-            if terminal:
-                q_values[action] = reward
+            if bool(terminal.numpy()):
+                q_values[0][int(action)] = reward
+                
             else:
-                q_values[action] = reward + discount_factor * np.max( model(observation2)[0] )
+                q_values[0][int(action)] = reward + tf.multiply(discount_factor, tf.reduce_max(q_values_pred))
 
-            observations.append(model(observation)[0])
+            predictions.append(q_values_pred)
             targets.append(q_values)
 
-        loss = model.loss(targets, observations)
+        loss = model.loss(targets, predictions)
         
         gradient = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradient, model.trainable_variables))
 
-def training(model, episodes=100, epochs=100, update_frequency = 0.5):
+def training(model, episodes=100, epochs=2, rendering=False):
     '''
     ADD
     '''
@@ -124,18 +125,21 @@ def training(model, episodes=100, epochs=100, update_frequency = 0.5):
     
     for epoch in range(epochs):
         avg_reward = []
-        rendering = True
+        new_counter = 0
+        
         for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch) + ':'):
             # we do the training episode
-            reward = do_episode(model, buffer, rendering)
-            rendering = False
+            reward = do_episode(model, buffer, rendering=rendering)
         
             # we store the reward for later statistic analysis
             avg_reward += [reward]
             
-            if episode % (1/update_frequency):
+            if new_counter > buffer.batch_size:
                 train_on_buffer(model, buffer.sample())
-        
+                new_counter = 0
+            else:
+                new_counter += 1
+            
         # we take the mean over the epoch and store it
         avg_reward = tf.reduce_mean(avg_reward).numpy()
         print('Epoch ' + str(epoch) + ' finished with an average reward of ' + str(avg_reward) + '.')
@@ -144,5 +148,7 @@ def training(model, episodes=100, epochs=100, update_frequency = 0.5):
     return epoch_returns
     
 epoch_returns = training(model)
-lunar_lander_env.close()
+model.save()
 visualize_progress(epoch_returns)
+lunar_lander_env.close()
+
