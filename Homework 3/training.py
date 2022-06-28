@@ -77,7 +77,7 @@ def do_episode(model):
 
     return reward_sum, buffer_queue
 
-def train_on_buffer(model, samples, discount_factor = 0.9):
+def train_on_buffer(model, samples, discount_factor = 0.99):
     '''
     Trains the model via single-step Q-learning
 
@@ -92,19 +92,20 @@ def train_on_buffer(model, samples, discount_factor = 0.9):
 
         for datum in samples:
             observation, action, reward, observation2, terminal = datum
-            # retrieve q values of observed state
+            # retrieve q values of observed state and next state
             q_values_pred = model(tf.expand_dims(observation,axis=0))
-            q_values = q_values_pred.numpy()
+            q_values_target = q_values_pred.numpy()
+            q_values2 = model(tf.expand_dims(observation2,axis=0))
 
             #compute targeted q value for taken action in observed state via single step q-learning
             if bool(terminal.numpy()):
-                q_values[0][int(action)] = reward
+                q_values_target[0][int(action)] = reward
 
             else:
-                q_values[0][int(action)] = reward + tf.multiply(discount_factor, tf.reduce_max(q_values_pred))
+                q_values_target[0][int(action)] = reward + tf.multiply(discount_factor, tf.reduce_max(q_values2))
 
             predictions.append(q_values_pred)
-            targets.append(q_values)
+            targets.append(q_values_target)
 
         loss = model.loss(targets, predictions)
 
@@ -116,7 +117,7 @@ def training(model, episodes=100, pool_size=10, epochs=100):
     ADD
     '''
 
-    # we intialize the necessary buffer and environment
+    # we initialize the necessary buffer and environment
     buffer = ExperienceReplayBuffer()
     observation, info = lunar_lander_env.reset(return_info=True)
 
@@ -151,9 +152,11 @@ def training(model, episodes=100, pool_size=10, epochs=100):
         print('Epoch ' + str(epoch) + ' finished with an average reward of ' + str(avg_reward) + '.')
         epoch_returns += [avg_reward]
 
+        #save weights of DQN after each epoch
+        model.save()
+
     return epoch_returns
 
 epoch_returns = training(model)
-model.save()
 visualize_progress(epoch_returns)
 lunar_lander_env.close()
