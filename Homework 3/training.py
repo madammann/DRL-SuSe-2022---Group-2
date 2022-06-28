@@ -157,11 +157,10 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, upda
 
                 avg_reward += [results[i][0]]
 
+            new_counter += pool_size * 4
             if new_counter > buffer.batch_size:
                 train_on_buffer(model_q, model_target, buffer.sample())
                 new_counter = 0
-            else:
-                new_counter += pool_size*4
 
             # Delayed update of target network
             if episode*pool_size % update_target_network_every == 0:
