@@ -82,6 +82,8 @@ def do_episode(model, epsilon = 0.1):
         buffer_queue += [[past_observation, action, reward, observation, terminal]]
         reward_sum += reward
 
+    env.close()
+
     return reward_sum, buffer_queue
 
 def train_on_buffer(model_q, model_target, samples, discount_factor = 0.99):
@@ -91,6 +93,7 @@ def train_on_buffer(model_q, model_target, samples, discount_factor = 0.99):
     :param model_q (LunarLanderModel): The Deep-Q-Network used as model.
     :param model_target (LunarLanderModel): The delayed target DQN
     :param samples (list of [past_observation, action, reward, observation, terminal]): samples to used to train model
+    :param discount_factor (float [0, 1]): gamma, decrease to set bias for sooner rewards
     '''
 
     with tf.GradientTape() as tape:
@@ -125,13 +128,13 @@ def update_target_network(model_q, model_target):
     for target_variable, source_variable in zip(model_target.trainable_variables, model_q.trainable_variables):
         target_variable.assign(source_variable)
 
-def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, epsilon = 0.9, epsilon_decay = 0.96 ):
+def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, update_target_network_every=20, epsilon=0.9, epsilon_decay=0.02):
     '''
     ADD
     '''
 
     # we initialize the necessary buffer and environment
-    buffer = ExperienceReplayBuffer()
+    buffer = ExperienceReplayBuffer(size=100000, batch_size=64)
     observation, info = lunar_lander_env.reset(return_info=True)
 
     # we create lists in which we want to store training result data
@@ -149,7 +152,7 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, epsi
 
             # we collect results and append them appropriately to the buffer
             for i in range(len(results)):
-                for j in range(len(results[i])):
+                for j in range(len(results[i][1])):
                     buffer.append(results[i][1][j])
 
                 avg_reward += [results[i][0]]
@@ -158,13 +161,15 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, epsi
                 train_on_buffer(model_q, model_target, buffer.sample())
                 new_counter = 0
             else:
-                new_counter += pool_size
+                new_counter += pool_size*4
 
-        #Delayed update of target network
-        update_target_network(model_q, model_target)
+            # Delayed update of target network
+            if episode*pool_size % update_target_network_every == 0:
+                update_target_network(model_q, model_target)
+
 
         #Reduce exploration probability:
-        epsilon = epsilon*epsilon_decay
+        epsilon = epsilon * ((1-epsilon_decay)**pool_size)
 
         # we take the mean over the epoch and store it
         avg_reward = tf.reduce_mean(avg_reward).numpy()
