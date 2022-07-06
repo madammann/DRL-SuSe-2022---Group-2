@@ -1,0 +1,5 @@
+Potential topics around Connect-4 for papers:
+
+A - Reinforcement Learning applied to Connect-4 (Pelin?)
+B - AI benchmarks and search for optimal policy in Connect-4 (Marlon)
+C - Explainability for Deep Reinforcement Learning (related to Connect-4?)
