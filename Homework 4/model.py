@@ -18,6 +18,7 @@ class CarRacingAgent(tf.keras.Model):
         self.conv_4 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
         self.maxpool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
         self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
+        self.flattening = tf.keras.layers.Flattten()
         self.pol_out = tf.keras.layers.Dense(units=4, activation='softmax')
 
         # 2dconv with 16 filters, 3x3, relu 2x
@@ -42,6 +43,7 @@ class CarRacingAgent(tf.keras.Model):
         x = self.conv_4(x)
         x = self.maxpool_2(x)
         x = self.glbavg(x)
+        x = self.flattening(x)
         x = self.pol_out(x)
 
         return x
