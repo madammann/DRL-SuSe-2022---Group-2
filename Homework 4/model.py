@@ -1,24 +1,24 @@
 import tensorflow as tf
 
-def CarRacingAgent():
+class CarRacingAgent(tf.keras.Model):
     '''
-    ADD
+    Car Racing Agent in the Car Racing environment
     '''
 
     def __init__(self):
         '''
         ADD
         '''
-        # do super here
-        
-        self.conv_1 = None
-        self.conv_2 = None
-        self.maxpool_1 = None
-        self.conv_3 = None
-        self.conv_4 = None
-        self.maxpool_2 = None
-        self.glbavg = None
-        self.pol_out = None
+        super(CarRacingAgent, self).__init__()
+
+        self.conv_1 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
+        self.conv_2 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
+        self.maxpool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        self.conv_3 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
+        self.conv_4 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
+        self.maxpool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
+        self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
+        self.pol_out = tf.keras.layers.Dense(units=4, activation='softmax')
 
         # 2dconv with 16 filters, 3x3, relu 2x
         # maxpool2d
@@ -28,10 +28,20 @@ def CarRacingAgent():
         # flatten
         # last layer dense(4,softmax)
 
-        pass
 
+    @tf.function
     def __call___(self, x):
         '''
         ADD
         '''
-        pass
+
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        x = self.maxpool_1(x)
+        x = self.conv_3(x)
+        x = self.conv_4(x)
+        x = self.maxpool_2(x)
+        x = self.glbavg(x)
+        x = self.pol_out(x)
+
+        return x
