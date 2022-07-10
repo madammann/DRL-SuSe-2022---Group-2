@@ -7,7 +7,7 @@ class CarRacingAgent(tf.keras.Model):
 
     def __init__(self):
         '''
-        ADD
+        Initialization function with model class super call.
         '''
         super(CarRacingAgent, self).__init__()
 
@@ -18,24 +18,20 @@ class CarRacingAgent(tf.keras.Model):
         self.conv_4 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
         self.maxpool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
         self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
-        self.flattening = tf.keras.layers.Flattten()
-        self.pol_out = tf.keras.layers.Dense(units=4, activation='softmax')
-
-        # 2dconv with 16 filters, 3x3, relu 2x
-        # maxpool2d
-        # 2dconv with 16 filters, 3x3, relu 2x
-        # maxpool2d
-        # globalavg pooling up to 9 values
-        # flatten
-        # last layer dense(4,softmax)
-
+        self.flatten = tf.keras.layers.Flatten()
+        self.steering = tf.keras.layers.Dense(units=1, activation='tanh')
+        self.accel = tf.keras.layers.Dense(units=2, activation='sigmoid')
 
     @tf.function
-    def __call___(self, x):
+    def __call__(self, x):
         '''
-        ADD
+        The Model call function, receives a (batch,96,96,3) input tensor.
+        
+        :x (tf.Tensor): Tensor of shape (batch,96,96,3).
+        
+        :returns (tf.Tensor): A tensor of shape (batch,4) as policy.
         '''
-
+        
         x = self.conv_1(x)
         x = self.conv_2(x)
         x = self.maxpool_1(x)
@@ -43,7 +39,26 @@ class CarRacingAgent(tf.keras.Model):
         x = self.conv_4(x)
         x = self.maxpool_2(x)
         x = self.glbavg(x)
-        x = self.flattening(x)
-        x = self.pol_out(x)
-
+        x = self.flatten(x)
+        
+        steering = self.steering(x)
+        accel = self.accel(x)
+        
+        x = tf.concat([steering,accel],axis=1)
+        
         return x
+    
+    def save(self, path='./weights.h5'):
+        '''
+        ADD
+        '''
+        
+        self.save_weights(path)
+    
+    def load(self, path='./weights.h5'):
+        '''
+        ADD
+        '''
+        
+        self.built = True
+        self.load_weights(path)
