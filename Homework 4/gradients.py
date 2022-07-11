@@ -1,69 +1,33 @@
-import tensorflow as tf
+import gym
 
-class PolicyNet(tf.keras.Model):
-    def __init__(self):
+from model import CarRacingAgent
 
-        super(PolicyNet, self).__init__()
+def estimate_step_len():
+    pass
 
-        # Policy Network layers
+def sample_trajectories(env, model, steps=100):
+    '''
+    ADD
+    '''
 
-        self.Dense_1 = tf.keras.layers.Dense(16, activation="relu")
+    observation, info = car_racing_env.reset(return_info=True)
+    terminal = False
+    reward = 0
+    trajectories = []
 
-        # Other layers and the output layer
+    # while no terminal state is reached we do actions
+    for step in range(steps):
+        action = model(tf.expand_dims(observation,axis=0))
+        observation, reward, terminal, info = car_racing_env.step(action)
 
+        if terminal:
+            break
 
+    return trajectories
 
-    @tf.function
-    def __call__(self, x):
+def policy_update(trajectories, model, loss, optimizer):
+    with tf.GradientTape() as tape:
+        loss = loss(targets, trajectories)
 
-        x = self.Dense_1(x)
-        x = # Policy Network layer .. (x)
-        x = # Policy Network layer .. (x)
-
-        # ...
-
-
-
-    return x
-
-class ValueNet(tf.keras.Model):  # aka Baseline
-
-
-
-    def __init__(self):
-
-        super(ValueNet, self).__init__()
-
-        # Value Network layers
-        self.Dense_1 = tf.keras.layers.Dense(16, activation="relu")
-
-        # Other layers and the output layer
-
-
-
-    @tf.function
-    def __call__(self, x):
-
-        x = self.Dense_1(x)
-        x = # Value Network Layer .. (x)
-        x = # Value Network Layer .. (x)
-
-        # ...
-
-
-
-    return x
-
-
-class PolicyGradient():
-
-    def __init__(self, env, num_iterations, batch_size):
-
-        self.env = env
-        self.num_iterations = num_iterations
-        self.batch_size = batch_size
-        self.observation_space = 
-        self.action_space =
-        self.gamma =
-        self.policy_net = PolicyNet()
-        self.value_net = ValueNet()
+        gradient = tape.gradient(loss, model.trainable_variables)
+        optimizer.apply_gradients(zip(gradient, model.trainable_variables))
