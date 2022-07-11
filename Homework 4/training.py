@@ -6,7 +6,9 @@ import pandas as pd
 
 from datetime import datetime, timedelta
 from model import CarRacingAgent
+from gradients import estimate_step_len, sample_trajectories
 from tqdm import tqdm
+from multiprocessing.pool import ThreadPool
 
 # load environment
 car_racing_env = gym.make("CarRacing-v0")
@@ -17,6 +19,10 @@ episodes_per_epoch = 1000
 
 # define hyperparameters
 learning_rate = 0.01
+
+# define loss and optimizer
+loss = tf.keras.losses.MeanSquaredError()
+optimizer = tf.keras.optimizers.Adam(learning_rate)
 
 # define data storage functions
 
@@ -46,21 +52,6 @@ def epoch_results(data : dict) -> str:
         return f'Epoch results were stored in train_data.csv.'
 
 # define training functions
-def do_episode(model, best, worst):
-    '''
-    ADD
-    '''
-    
-    # TODO actual training episode and storage of necessary variables, maybe even training in episode, we'll see
-    
-    if best == None or loss < best:
-        best = loss
-    
-    if worst == None or loss > worst:
-        worst = loss
-    
-    return rewards
-
 
 # initialization
 duration = 0
@@ -108,9 +99,18 @@ for epoch in range(current_epoch, epochs):
     
     # episode loop
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
-        # TODO: Multithreading and result storage
-        do_episode(model, best, worst)
-        # add more here
+        # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
+        step_len = estimate_step_len()
+        args = [(model,deepcopy(env),step_len) for _ in range(32)]
+        results = ThreadPool(6).starmap(sample_trajectories,args)
+        
+        # TODO use results
+        # ADD
+        
+        # TODO update model
+#         policy_update()
+        
+        # TODO get stats
     
     # generate epoch data
     epoch_end = datetime.now()

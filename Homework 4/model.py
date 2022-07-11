@@ -5,7 +5,7 @@ class CarRacingAgent(tf.keras.Model):
     Car Racing Agent in the Car Racing environment
     '''
 
-    def __init__(self):
+    def __init__(self, dev=0.05):
         '''
         Initialization function with model class super call.
         '''
