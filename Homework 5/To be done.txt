@@ -1,5 +1,13 @@
 Potential topics around Connect-4 for papers:
 
 A - Reinforcement Learning applied to Connect-4 (Pelin)
+  - https://arxiv.org/pdf/2202.11797.pdf // Training Characteristic Functions with Reinforcement Learning:
+    XAI-methods play Connect Four (looks insteresting but not that relevant)
+  - https://link.springer.com/chapter/10.1007/978-981-16-2594-7_59 // Solving Connect 4 Using Artificial Intelligence
+  - https://fenix.tecnico.ulisboa.pt/downloadFile/1689244997260153/81811-joao-crespo_dissertacao.pdf // Reinforcement Learning for Two-Player Zero-Sum Games
+    (dissertation)
+  - https://arxiv.org/pdf/2105.06136.pdf // Adaptive Warm-Start MCTS in AlphaZero-like Deep Reinforcement Learning
+  - https://thejacobthom.ca/wp-content/uploads/2021/11/SENG-474.pdf // Implementation of Reinforcement Learning Algorithms
+    for Connect 4 (looks like a project)
 B - AI benchmarks and search for optimal policy in Connect-4 (Marlon)
 C - Explainability for Deep Reinforcement Learning (related to Connect-4?)
