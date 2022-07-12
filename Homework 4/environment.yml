@@ -1,0 +1,18 @@
+name: CarRacingDRL
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.8
+  - pip
+  - pip:
+    - numpy
+    - pandas
+    - matplotlib
+    - gym
+    - gym[box2d]
+    - tensorflow==2.9
+    - tensorflow_probability
+    - tensorflow-datasets
+    - h5py
+    - tqdm

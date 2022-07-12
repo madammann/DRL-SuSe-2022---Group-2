@@ -1,6 +1,20 @@
 import gym
 
-from model import CarRacingAgent
+from model import CarRacingAgent, ValueNetwork
+
+class PolicyGradient():
+
+    def __init__(self, agent, val_network, env):
+
+        self.env = env
+        self.num_iterations = None
+        self.batch_size = None
+        self.observation_space = None
+        self.action_space = None
+        self.gamma = None
+        self.policy_net = agent
+        self.value_net = val_network
+        
 
 def estimate_step_len():
     pass
@@ -18,7 +32,7 @@ def sample_trajectories(env, model, steps=100):
     # while no terminal state is reached we do actions
     for step in range(steps):
         action = model(tf.expand_dims(observation,axis=0))
-        observation, reward, terminal, info = car_racing_env.step(action)
+        observation, reward, terminal, info = env.step(action)
 
         if terminal:
             break

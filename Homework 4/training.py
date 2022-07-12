@@ -80,11 +80,14 @@ except FileNotFoundError:
     print(f'Warning: Unable to load train_data.csv, assuming current epoch is initial epoch.')
 
 # model initialization
-model = CarRacingAgent()
-model(tf.random.normal((10,96,96,3))) # create the graph by passing input once
+agent = CarRacingAgent()
+value_net = ValueNetwork()
+agent(tf.random.normal((10,96,96,3))) # create the graph by passing input once
+# value_net(tf.random.normal(()))
 
 try:
-    model.load('./weights.h5')
+    agent.load()
+    value_net.load()
     
 except FileNotFoundError:
     print(f'Warning: Unable to load weights, assuming model has not been trained before and starting training now.')
@@ -101,7 +104,7 @@ for epoch in range(current_epoch, epochs):
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
         step_len = estimate_step_len()
-        args = [(model,deepcopy(env),step_len) for _ in range(32)]
+        args = [(agent,deepcopy(env),step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
         
         # TODO use results
@@ -128,11 +131,13 @@ for epoch in range(current_epoch, epochs):
     # store model weights and rename older weights
     try:
         os.rename('./weights.h5', f'./old_weights_{epoch-1}.h5')
+        os.rename('./val_weights.h5', f'./old_val_weights_{epoch-1}.h5')
     
     except:
         print(f'Warning: Either an older model weights.h5 did not exist or renaming it was unsuccessful.')
     
-    model.save()
+    agent.save()
+    value_net.save()
     
     # test if continue or break loop
     if (endtime - datetime.now()).seconds <= 0:
