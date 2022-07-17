@@ -4,7 +4,7 @@ import tensorflow as tf
 from model import *
 
 # load environment
-car_racing_env = gym.make("CarRacing-v0")
+car_racing_env = gym.make("CarRacing-v1")
 
 # load model
 model = CarRacingAgent()

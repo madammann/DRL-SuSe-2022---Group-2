@@ -1,5 +1,5 @@
 import tensorflow as tf
-import tensorflow_probabilities as tfp
+import tensorflow_probability as tfp
 
 class CarRacingAgent(tf.keras.Model):
     '''
@@ -23,7 +23,7 @@ class CarRacingAgent(tf.keras.Model):
         self.steering = tf.keras.layers.Dense(units=1, activation='tanh')
         self.accel = tf.keras.layers.Dense(units=2, activation='sigmoid')
         
-        self.dist = tfp.
+        #self.dist = tfp.
 
     @tf.function
     def __call__(self, x):

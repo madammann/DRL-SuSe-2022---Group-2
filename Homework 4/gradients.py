@@ -1,4 +1,5 @@
 import gym
+import tensorflow as tf
 
 from model import CarRacingAgent, ValueNetwork
 
@@ -17,14 +18,14 @@ class PolicyGradient():
         
 
 def estimate_step_len():
-    pass
+    return 10 #TODO: replace dummy value
 
 def sample_trajectories(env, model, steps=100):
     '''
     ADD
     '''
 
-    observation, info = car_racing_env.reset(return_info=True)
+    observation, info = env.reset(return_info=True)
     terminal = False
     reward = 0
     trajectories = []

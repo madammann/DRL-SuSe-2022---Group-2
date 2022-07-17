@@ -3,15 +3,16 @@ import tensorflow as tf
 import os
 import gym
 import pandas as pd
+import copy
 
 from datetime import datetime, timedelta
-from model import CarRacingAgent
+from model import CarRacingAgent, ValueNetwork
 from gradients import estimate_step_len, sample_trajectories
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
 
 # load environment
-car_racing_env = gym.make("CarRacing-v0")
+car_racing_env = gym.make("CarRacing-v1")
 
 # define epoch length
 epochs = 100
@@ -54,8 +55,9 @@ def epoch_results(data : dict) -> str:
 # define training functions
 
 # initialization
-duration = 0
+duration = 10 #TODO: make duration a parameter
 
+"""
 while duration == 0:
     print(f'Please select a training duration in hours after which training shall be stopped at earliest convenience: ')
     duration = int(input())
@@ -65,9 +67,9 @@ while duration == 0:
         print('\n')
         print(f'Invalid duration, please select a positive integer in hours.')
         print('\n')
-
+"""
 starttime = datetime.now()
-endtime = datatime.now() + timedelta(hours=duration)
+endtime = datetime.now() + timedelta(hours=duration)
 
 print(f'Beginning training from current epoch milestone if present...')
 
@@ -83,11 +85,11 @@ except FileNotFoundError:
 agent = CarRacingAgent()
 value_net = ValueNetwork()
 agent(tf.random.normal((10,96,96,3))) # create the graph by passing input once
-# value_net(tf.random.normal(()))
+#value_net(tf.random.normal(()))
 
 try:
     agent.load()
-    value_net.load()
+    #value_net.load()
     
 except FileNotFoundError:
     print(f'Warning: Unable to load weights, assuming model has not been trained before and starting training now.')
@@ -104,8 +106,11 @@ for epoch in range(current_epoch, epochs):
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
         step_len = estimate_step_len()
-        args = [(agent,deepcopy(env),step_len) for _ in range(32)]
+        """
+        args = [(copy.deepcopy(car_racing_env),agent,step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
+        """
+        result = sample_trajectories(car_racing_env,agent,step_len)
         
         # TODO use results
         # ADD
