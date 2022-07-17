@@ -1,0 +1,8 @@
+Hello Eosandra,
+your project proposal focuses on an important topic which I also though about a bit in the past. In general, this topic is interesting and relevant to future research on how to safely train models in the real world without costly consequences.
+I really like this idea; however, I think that you might run into some problems if your current proposal is what you end up opting for.
+I am not well-versed in risk-averse RL or constrained RL, I am sure you know a lot more about it than me, however, since this topic seems rather theoretical, I would suggest being careful with your workload since theoretical work can become overwhelming surprisingly fast. My advice would be to constrain yourself and make a detailed plan on what exactly you are trying to replicate with room for more but overall narrowed down enough to not exhaust yourself.
+Additionally, I would also be very careful in choosing the environment you want to use. Maybe you already know exactly what to do and are confident, however, do be prepared for your approach with the Worst-Case Soft Actor-Critic not working as intended. In such a case the implementation of it alone is also worth something and you can still use the results in case the results are not what you hoped for.
+I hope you project idea, if you choose to work on it, is successfully implemented.
+All the Best,
+Marlon Dammann

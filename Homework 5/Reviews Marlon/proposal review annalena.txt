@@ -1,0 +1,10 @@
+Hello Annalena,
+
+I have read your project proposal and think your idea is cool.
+At first, I was skeptical since, having played Overcooked 2 recently, I thought this task would be way to hard since training should take a long time. After reviewing your links however, especially the environment you shared, I think it is a task which is doable.
+It really shows that you already have a good understanding of what you want to do. From what I can gather your idea is to use your own MAPPO implementation for this problem and to evaluate against pre-trained models already available. This sounds reasonable.
+As someone who loves statistics and testing, I would also encourage you to find some interesting setups for evaluation model performance such as custom levels and the stored weights of previous models to really investigate learning success of your model. Is there a certain level design which results in problems? At which epoch does the agent outperform the other models or does it outperform them at all? What would be the human performance after n hours of playing the environment? All of these may be things you could try to figure out if you have the time and interest to do so.
+I hope you have success with your project if you decide to go for it in the end.
+
+Best,
+Marlon
