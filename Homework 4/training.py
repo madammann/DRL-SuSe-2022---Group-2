@@ -57,6 +57,7 @@ def epoch_results(data : dict) -> str:
 # initialization
 duration = 10 #TODO: make duration a parameter
 
+# For testing, we should avoid manually inputting parameters
 """
 while duration == 0:
     print(f'Please select a training duration in hours after which training shall be stopped at earliest convenience: ')
@@ -106,6 +107,7 @@ for epoch in range(current_epoch, epochs):
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
         step_len = estimate_step_len()
+        #TODO: include multithreading again - I suspect that deepcopying the environment does not work (track attribute not found)
         """
         args = [(copy.deepcopy(car_racing_env),agent,step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
