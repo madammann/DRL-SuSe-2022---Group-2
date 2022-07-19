@@ -20,12 +20,25 @@ class PolicyGradient():
 def estimate_step_len():
     return 10 #TODO: replace dummy value
 
+def process_image(img):
+    '''
+    processes image data from observation - normalization of pixel values
+    '''
+    #todo: maybe remove bottom bar
+    #img = img[:-12,:,:]
+
+    #normalization of values
+    img = img/255.0
+
+    return img
+
 def sample_trajectories(env, model, steps=100):
     '''
     ADD
     '''
 
     observation, info = env.reset(return_info=True)
+    observation = process_image(observation)
     terminal = False
     reward = 0
     trajectories = []
@@ -34,6 +47,7 @@ def sample_trajectories(env, model, steps=100):
     for step in range(steps):
         action = model(tf.expand_dims(observation,axis=0))
         observation, reward, terminal, info = env.step(action)
+        observation = process_image(observation)
 
         if terminal:
             break

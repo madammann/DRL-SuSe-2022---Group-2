@@ -2,6 +2,7 @@
 import tensorflow as tf
 import os
 import gym
+from gym.wrappers import GrayScaleObservation
 import pandas as pd
 import copy
 
@@ -12,7 +13,7 @@ from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
 
 # load environment
-car_racing_env = gym.make("CarRacing-v1")
+car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # define epoch length
 epochs = 100
@@ -46,7 +47,7 @@ def epoch_results(data : dict) -> str:
         df = df.append(appendix)
     
     except Exeption as e:
-        print('e')
+        print('Failed to read train_data.csv')
         
     finally:
         df.to_csv('train_data.csv', index=False)
@@ -85,7 +86,7 @@ except FileNotFoundError:
 # model initialization
 agent = CarRacingAgent()
 value_net = ValueNetwork()
-agent(tf.random.normal((10,96,96,3))) # create the graph by passing input once
+agent(tf.random.normal((10,96,96,1))) # create the graph by passing input once
 #value_net(tf.random.normal(()))
 
 try:

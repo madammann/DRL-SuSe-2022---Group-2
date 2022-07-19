@@ -12,7 +12,7 @@ class CarRacingAgent(tf.keras.Model):
         '''
         super(CarRacingAgent, self).__init__()
 
-        self.conv_1 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
+        self.conv_1 = tf.keras.layers.Conv2D(16, (3,3), activation="relu", input_shape=(96, 96, 1))
         self.conv_2 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
         self.maxpool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
         self.conv_3 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")

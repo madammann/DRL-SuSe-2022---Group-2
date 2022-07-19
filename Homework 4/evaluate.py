@@ -1,10 +1,11 @@
 # imports
 import gym
+from gym.wrappers import GrayScaleObservation
 import tensorflow as tf
 from model import *
 
 # load environment
-car_racing_env = gym.make("CarRacing-v1")
+car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # load model
 model = CarRacingAgent()
@@ -25,7 +26,7 @@ def do_episode(model):
     while not terminal:
         car_racing_env.render()
         
-        # we input the observation to the model and chose a discrete action by applying the argmax over the output
+        # we input the observation to the model and choose a discrete action by applying the argmax over the output
         action = model(tf.expand_dims(observation,axis=0))
         observation, reward, terminal, info = car_racing_env.step(action)
         
