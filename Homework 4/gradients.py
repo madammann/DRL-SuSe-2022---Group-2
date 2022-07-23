@@ -32,7 +32,7 @@ def process_image(img):
 
     return img
 
-def sample_trajectories(env, model, steps=100):
+def sample_trajectories(env, model, buffer, steps=100):
     '''
     ADD
     '''
@@ -41,22 +41,49 @@ def sample_trajectories(env, model, steps=100):
     observation = process_image(observation)
     terminal = False
     reward = 0
-    trajectories = []
 
     # while no terminal state is reached we do actions
     for step in range(steps):
-        action = model(tf.expand_dims(observation,axis=0))
-        observation, reward, terminal, info = env.step(action)
+        action_dist = model(tf.expand_dims(observation,axis=0))
+        action = action_dist.sample()
+        observation, reward, terminal, info = env.step(tf.squeeze(action).numpy())
         observation = process_image(observation)
+
+        #storing what's happened in that step, the action distribution might be just calculated from state during training
+        buffer['state'].append(observation)
+        buffer['action'].append(action)
+        buffer['action_dist'].append(action_dist)
+        buffer['reward'].append(reward)
+        buffer['ret'].append(0) #calculated later
 
         if terminal:
             break
 
-    return trajectories
+    return buffer
 
-def policy_update(trajectories, model, loss, optimizer):
+def calculate_returns(buffer, discount_factor = 0.98):
+    # Calculate cumulative discounted rewards for each timestep in buffer
+    # TODO: didn't check this code in detail yet
+
+    buffer_len = len(buffer['reward'])
+    for outer_idx in range(buffer_len):
+        ret = 0
+        for inner_idx in range(outer_idx, buffer_len):
+            ret += discount_factor ** (inner_idx-outer_idx) * buffer['reward'][inner_idx]
+        buffer['ret'][outer_idx] = ret
+
+    return buffer
+
+
+def policy_update(model, buffer):
+    #Todo: Gradient doesn't work like that
     with tf.GradientTape() as tape:
-        loss = loss(targets, trajectories)
+        buffer = calculate_returns(buffer)
 
-        gradient = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradient, model.trainable_variables))
+        policy_gradient = 0
+        for sample_idx in range(len(buffer['reward'])):
+            log_prob = buffer['action_dist'][sample_idx].log_prob(buffer['action'][sample_idx])
+            policy_gradient += -tf.math.multiply(buffer['ret'][sample_idx], log_prob)
+
+        gradient = tape.gradient(policy_gradient, model.trainable_variables)
+        model.optimizer.apply_gradients(zip(gradient, model.trainable_variables))

@@ -8,7 +8,7 @@ import copy
 
 from datetime import datetime, timedelta
 from model import CarRacingAgent, ValueNetwork
-from gradients import estimate_step_len, sample_trajectories
+from gradients import *
 from tqdm import tqdm
 from multiprocessing.pool import ThreadPool
 
@@ -21,10 +21,6 @@ episodes_per_epoch = 1000
 
 # define hyperparameters
 learning_rate = 0.01
-
-# define loss and optimizer
-loss = tf.keras.losses.MeanSquaredError()
-optimizer = tf.keras.optimizers.Adam(learning_rate)
 
 # define data storage functions
 
@@ -106,6 +102,8 @@ for epoch in range(current_epoch, epochs):
     
     # episode loop
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
+        #store trajectories in buffer
+        buffer = dict(state = [], action = [], action_dist = [], reward = [], ret = [])
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
         step_len = estimate_step_len()
         #TODO: include multithreading again - I suspect that deepcopying the environment does not work (track attribute not found)
@@ -113,13 +111,12 @@ for epoch in range(current_epoch, epochs):
         args = [(copy.deepcopy(car_racing_env),agent,step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
         """
-        result = sample_trajectories(car_racing_env,agent,step_len)
+        buffer = sample_trajectories(car_racing_env, agent, buffer, step_len)
         
         # TODO use results
         # ADD
         
-        # TODO update model
-#         policy_update()
+        policy_update(agent, buffer)
         
         # TODO get stats
     

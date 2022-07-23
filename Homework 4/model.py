@@ -21,9 +21,15 @@ class CarRacingAgent(tf.keras.Model):
         self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
         self.flatten = tf.keras.layers.Flatten()
         self.steering = tf.keras.layers.Dense(units=1, activation='tanh')
-        self.accel = tf.keras.layers.Dense(units=2, activation='sigmoid')
-        
-        #self.dist = tfp.
+        self.accel = tf.keras.layers.Dense(units=1, activation='sigmoid')
+        self.breaking = tf.keras.layers.Dense(units=1, activation='sigmoid')
+
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        self.loss = tf.keras.losses.MeanSquaredError()
+
+        #fixed sigma to determine an action together with mu as policy network outputs
+        self.sigma = dev
+
 
     @tf.function
     def __call__(self, x):
@@ -44,14 +50,14 @@ class CarRacingAgent(tf.keras.Model):
         x = self.glbavg(x)
         x = self.flatten(x)
         
-        steering = self.steering(x)
-        accel = self.accel(x)
-        
-        action = tf.concat([steering,accel],axis=1)
-        log_prob = None
-        
-        return (x, log_prob)
-    
+        mu_steering = self.steering(x)
+        mu_accel = self.accel(x)
+        mu_breaking = self.breaking(x)
+
+        action = tf.concat((mu_steering, mu_accel, mu_breaking), axis=-1)
+
+        return tfp.distributions.Normal(loc = action, scale = self.sigma)
+
     def save(self, path='./weights.h5'):
         '''
         ADD
