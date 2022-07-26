@@ -82,7 +82,7 @@ def policy_update(model, buffer):
 
         policy_gradient = 0
         for sample_idx in range(len(buffer['reward'])):
-            log_prob = buffer['action_dist'][sample_idx].log_prob(buffer['action'][sample_idx])
+            log_prob = model(tf.expand_dims(buffer['state'][sample_idx], axis=0)).log_prob(buffer['action'][sample_idx])
             policy_gradient += -tf.math.multiply(buffer['ret'][sample_idx], log_prob)
 
         gradient = tape.gradient(policy_gradient, model.trainable_variables)

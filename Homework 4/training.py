@@ -125,10 +125,11 @@ for epoch in range(current_epoch, epochs):
     epoch_duration = epoch_end - epoch_start
     
     data = {'TIME' : str(epoch_end),
-            'LOSS' : float(tf.reduce_mean(avg_loss).numpy()),
+            #'LOSS' : float(tf.reduce_mean(avg_loss).numpy()),
             'DURATION' : str(epoch_duration),
-            'BEST' : float(best.numpy()),
-            'WORST' : float(worst.numpy())}
+            #'BEST' : float(best.numpy()),
+            #'WORST' : float(worst.numpy())
+            }
     
     # store epoch result data
     epoch_results(data)
@@ -142,7 +143,7 @@ for epoch in range(current_epoch, epochs):
         print(f'Warning: Either an older model weights.h5 did not exist or renaming it was unsuccessful.')
     
     agent.save()
-    value_net.save()
+    #value_net.save()
     
     # test if continue or break loop
     if (endtime - datetime.now()).seconds <= 0:
