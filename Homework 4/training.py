@@ -5,6 +5,7 @@ import gym
 from gym.wrappers import GrayScaleObservation
 import pandas as pd
 import copy
+import numpy as np
 
 from datetime import datetime, timedelta
 from model import CarRacingAgent, ValueNetwork
@@ -17,7 +18,7 @@ car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # define epoch length
 epochs = 100
-episodes_per_epoch = 1000
+episodes_per_epoch = 100
 
 # define hyperparameters
 learning_rate = 0.01
@@ -98,20 +99,24 @@ for epoch in range(current_epoch, epochs):
     # creating data variables
     epoch_start = datetime.now()
     avg_loss = []
+    reward_sums = []
     best, worst = None, None
-    
+
+    render = True #Render first episode of each epoch
     # episode loop
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
         #store trajectories in buffer
         buffer = dict(state = [], action = [], action_dist = [], reward = [], ret = [])
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
-        step_len = estimate_step_len()
+        #step_len = estimate_step_len()
         #TODO: include multithreading again - I suspect that deepcopying the environment does not work (track attribute not found)
         """
         args = [(copy.deepcopy(car_racing_env),agent,step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
         """
-        buffer = sample_trajectories(car_racing_env, agent, buffer, step_len)
+        buffer, sum_reward = sample_trajectories(car_racing_env, agent, buffer, render = render)#, step_len)
+        reward_sums.append(sum_reward)
+        render = False
         
         # TODO use results
         # ADD
@@ -133,6 +138,8 @@ for epoch in range(current_epoch, epochs):
     
     # store epoch result data
     epoch_results(data)
+
+    print("Average epoch reward:",np.mean(reward_sums))
     
     # store model weights and rename older weights
     try:
