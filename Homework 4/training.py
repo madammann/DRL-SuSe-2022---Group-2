@@ -21,7 +21,7 @@ epochs = 100
 episodes_per_epoch = 100
 
 # define hyperparameters
-learning_rate = 0.01
+learning_rate = 0.001
 
 # define data storage functions
 
@@ -81,7 +81,7 @@ except FileNotFoundError:
     print(f'Warning: Unable to load train_data.csv, assuming current epoch is initial epoch.')
 
 # model initialization
-agent = CarRacingAgent()
+agent = CarRacingAgent(learning_rate)
 value_net = ValueNetwork()
 agent(tf.random.normal((10,96,96,1))) # create the graph by passing input once
 #value_net(tf.random.normal(()))

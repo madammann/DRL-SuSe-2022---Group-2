@@ -67,7 +67,6 @@ def sample_trajectories(env, model, buffer, render=False, steps=1000):
 
 def calculate_returns(buffer, discount_factor = 0.98):
     # Calculate cumulative discounted rewards for each timestep in buffer
-    # TODO: didn't check this code in detail yet
 
     buffer_len = len(buffer['reward'])
     for outer_idx in range(buffer_len):
@@ -83,10 +82,10 @@ def policy_update(model, buffer):
     with tf.GradientTape() as tape:
         buffer = calculate_returns(buffer)
 
-        policy_gradient = 0
+        loss = 0
         for sample_idx in range(len(buffer['reward'])):
             log_prob = model(tf.expand_dims(buffer['state'][sample_idx], axis=0)).log_prob(buffer['action'][sample_idx])
-            policy_gradient += -tf.math.multiply(buffer['ret'][sample_idx], log_prob)
+            loss += -tf.math.multiply(buffer['ret'][sample_idx], log_prob)
 
-        gradient = tape.gradient(policy_gradient, model.trainable_variables)
+        gradient = tape.gradient(loss, model.trainable_variables)
         model.optimizer.apply_gradients(zip(gradient, model.trainable_variables))

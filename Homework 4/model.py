@@ -6,7 +6,7 @@ class CarRacingAgent(tf.keras.Model):
     Car Racing Agent in the Car Racing environment
     '''
 
-    def __init__(self, dev=0.05):
+    def __init__(self, learning_rate, dev=0.05):
         '''
         Initialization function with model class super call.
         '''
@@ -24,7 +24,7 @@ class CarRacingAgent(tf.keras.Model):
         self.accel = tf.keras.layers.Dense(units=1, activation='sigmoid')
         self.breaking = tf.keras.layers.Dense(units=1, activation='sigmoid')
 
-        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
         self.loss = tf.keras.losses.MeanSquaredError()
 
         #fixed sigma to determine an action together with mu as policy network outputs
@@ -55,8 +55,11 @@ class CarRacingAgent(tf.keras.Model):
         mu_breaking = self.breaking(x)
 
         action = tf.concat((mu_steering, mu_accel, mu_breaking), axis=-1)
+        #Create multidimensional sigma for Multivariate Normal distribution
+        sigmas = tf.stack((self.sigma,self.sigma,self.sigma))
 
-        return tfp.distributions.Normal(loc = action, scale = self.sigma)
+        #Using Multivariate Normal distribution due to multidimensional action space
+        return tfp.distributions.MultivariateNormalDiag(action, sigmas)
 
     def save(self, path='./weights.h5'):
         '''
