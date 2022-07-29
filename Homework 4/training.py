@@ -17,11 +17,11 @@ from multiprocessing.pool import ThreadPool
 car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # define epoch length
-epochs = 100
-episodes_per_epoch = 100
+epochs = 1000
+episodes_per_epoch = 20
 
 # define hyperparameters
-learning_rate = 0.001
+learning_rate = 0.0005
 
 # define data storage functions
 

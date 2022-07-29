@@ -6,7 +6,7 @@ class CarRacingAgent(tf.keras.Model):
     Car Racing Agent in the Car Racing environment
     '''
 
-    def __init__(self, learning_rate, dev=0.05):
+    def __init__(self, learning_rate, dev=0.02):
         '''
         Initialization function with model class super call.
         '''
@@ -59,7 +59,7 @@ class CarRacingAgent(tf.keras.Model):
         sigmas = tf.stack((self.sigma,self.sigma,self.sigma))
 
         #Using Multivariate Normal distribution due to multidimensional action space
-        return tfp.distributions.MultivariateNormalDiag(action, sigmas)
+        return tfp.distributions.MultivariateNormalDiag(action, scale_diag = sigmas)
 
     def save(self, path='./weights.h5'):
         '''

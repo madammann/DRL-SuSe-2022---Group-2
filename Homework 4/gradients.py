@@ -32,7 +32,7 @@ def process_image(img):
 
     return img
 
-def sample_trajectories(env, model, buffer, render=False, steps=1000):
+def sample_trajectories(env, model, buffer, render=False, steps=2000):
     '''
     ADD
     '''
