@@ -1,0 +1,44 @@
+Documentation Ideas - Example project is uploaded
+
+Suggestion - Integrated Gradients
+
+Milestones
+
+MVP - Something that learned at least a bit
+
+Exhaustive search - minimax
+
+Subgoals: 
+
+Step 1: Connect 4 Environment - almost completed, should also work with bigger grids
+	Observation should fit the model
+
+	Multi-agent gym environment exists - self-implementation is better with reasons
+
+Step 2: Basic RL algorithm / Tree-search algorithm
+	Basic RL might be difficult??
+	Tree-search is a good idea 
+
+Step 3: DQN and training
+
+Step 4: Reading Literature
+
+----- First Milestone Reached -----
+
+
+Timeline? Nothing is fixed so far
+Maybe reach the 1st Milestone within a month (End of August)
+
+-----------------------------------
+
+HW4
+
+Seriously trying is the most important part. Failed code is okay. 
+ 
+-----------------------------------
+
+Python for neuroevolution is completely fine. 
+We have to go through neuroevolution ourselves.
+
+
+
