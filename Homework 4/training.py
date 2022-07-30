@@ -17,11 +17,13 @@ from multiprocessing.pool import ThreadPool
 car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # define epoch length
-epochs = 1000
+epochs = 100
 episodes_per_epoch = 20
 
 # define hyperparameters
 learning_rate = 0.0005
+
+discount_factor = 0.98 # gamma
 
 # define data storage functions
 
@@ -82,13 +84,13 @@ except FileNotFoundError:
 
 # model initialization
 agent = CarRacingAgent(learning_rate)
-value_net = ValueNetwork()
+value_net = ValueNetwork(learning_rate)
 agent(tf.random.normal((10,96,96,1))) # create the graph by passing input once
-#value_net(tf.random.normal(()))
+value_net(tf.random.normal((10,96,96,1)))
 
 try:
     agent.load()
-    #value_net.load()
+    value_net.load()
     
 except FileNotFoundError:
     print(f'Warning: Unable to load weights, assuming model has not been trained before and starting training now.')
@@ -106,7 +108,7 @@ for epoch in range(current_epoch, epochs):
     # episode loop
     for _ in tqdm(range(episodes_per_epoch), desc=f'Running epoch {epoch}: '):
         #store trajectories in buffer
-        buffer = dict(state = [], action = [], action_dist = [], reward = [], ret = [])
+        buffer = dict(state = [], action = [], action_dist = [], reward = [], ret = [], terminal = [], advantage = [])
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
         #step_len = estimate_step_len()
         #TODO: include multithreading again - I suspect that deepcopying the environment does not work (track attribute not found)
@@ -121,7 +123,7 @@ for epoch in range(current_epoch, epochs):
         # TODO use results
         # ADD
         
-        policy_update(agent, buffer)
+        policy_update_A2C(agent, value_net, buffer, discount_factor)
         
         # TODO get stats
     
@@ -150,7 +152,7 @@ for epoch in range(current_epoch, epochs):
         print(f'Warning: Either an older model weights.h5 did not exist or renaming it was unsuccessful.')
     
     agent.save()
-    #value_net.save()
+    value_net.save()
     
     # test if continue or break loop
     if (endtime - datetime.now()).seconds <= 0:

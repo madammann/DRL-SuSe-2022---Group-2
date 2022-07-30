@@ -25,7 +25,6 @@ class CarRacingAgent(tf.keras.Model):
         self.breaking = tf.keras.layers.Dense(units=1, activation='sigmoid')
 
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        self.loss = tf.keras.losses.MeanSquaredError()
 
         #fixed sigma to determine an action together with mu as policy network outputs
         self.sigma = dev
@@ -34,11 +33,11 @@ class CarRacingAgent(tf.keras.Model):
     @tf.function
     def __call__(self, x):
         '''
-        The Model call function, receives a (batch,96,96,3) input tensor.
+        The Model call function, receives a (batch,96,96,1) input tensor.
         
-        :x (tf.Tensor): Tensor of shape (batch,96,96,3).
+        :x (tf.Tensor): Tensor of shape (batch,96,96,1).
         
-        :returns (tuple): A tuple of two tensors of shape (batch,4) as action and log prob of action.
+        :returns (distribution): A Multivariate Normal distribution parameterised by a tuple of three tensors as each action-dimension's mu and fixed sigma.
         '''
         
         x = self.conv_1(x)
@@ -75,55 +74,57 @@ class CarRacingAgent(tf.keras.Model):
         
         self.built = True
         self.load_weights(path)
-        
+
+
 class ValueNetwork(tf.keras.Model):
     '''
-    ADD
+    Critic Model for A2C
     '''
 
-#     def __init__(self, dev=0.05):
-#         '''
-#         Initialization function with model class super call.
-#         '''
-#         super(CarRacingAgent, self).__init__()
+    def __init__(self, learning_rate):
+        '''
+        Initialization function with model class super call.
+        '''
+        super(ValueNetwork, self).__init__()
 
-#         self.conv_1 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
-#         self.conv_2 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
-#         self.maxpool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
-#         self.conv_3 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
-#         self.conv_4 = tf.keras.layers.Conv2D(16, (3,3), activation="relu")
-#         self.maxpool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2,2))
-#         self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
-#         self.flatten = tf.keras.layers.Flatten()
-#         self.steering = tf.keras.layers.Dense(units=1, activation='tanh')
-#         self.accel = tf.keras.layers.Dense(units=2, activation='sigmoid')
+        self.conv_1 = tf.keras.layers.Conv2D(16, (3, 3), activation="relu", input_shape=(96, 96, 1))
+        self.conv_2 = tf.keras.layers.Conv2D(16, (3, 3), activation="relu")
+        self.maxpool_1 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))
+        self.conv_3 = tf.keras.layers.Conv2D(16, (3, 3), activation="relu")
+        self.conv_4 = tf.keras.layers.Conv2D(16, (3, 3), activation="relu")
+        self.maxpool_2 = tf.keras.layers.MaxPooling2D(pool_size=(2, 2))
+        self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
+        self.flatten = tf.keras.layers.Flatten()
 
-#     @tf.function
-#     def __call__(self, x):
-#         '''
-#         The Model call function, receives a (batch,96,96,3) input tensor.
-        
-#         :x (tf.Tensor): Tensor of shape (batch,96,96,3).
-        
-#         :returns (tf.Tensor): A tensor of shape (batch,4) as policy.
-#         '''
-        
-#         x = self.conv_1(x)
-#         x = self.conv_2(x)
-#         x = self.maxpool_1(x)
-#         x = self.conv_3(x)
-#         x = self.conv_4(x)
-#         x = self.maxpool_2(x)
-#         x = self.glbavg(x)
-#         x = self.flatten(x)
-        
-#         steering = self.steering(x)
-#         accel = self.accel(x)
-        
-#         x = tf.concat([steering,accel],axis=1)
-        
-#         return x
-    
+        self.out_value = tf.keras.layers.Dense(units=1, activation=None)
+
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        self.loss = tf.keras.losses.MeanSquaredError()
+
+
+    @tf.function
+    def __call__(self, x):
+        '''
+        The Model call function, receives an observed state as a (batch,96,96,1) input tensor, outputs the value of that state.
+
+        :x (tf.Tensor): Tensor of shape (batch,96,96,1).
+
+        :returns (tensor): The value of the state (which is input)
+        '''
+
+        x = self.conv_1(x)
+        x = self.conv_2(x)
+        x = self.maxpool_1(x)
+        x = self.conv_3(x)
+        x = self.conv_4(x)
+        x = self.maxpool_2(x)
+        x = self.glbavg(x)
+        x = self.flatten(x)
+
+        output = self.out_value(x)
+
+        return output
+
     def save(self, path='./val_weights.h5'):
         '''
         ADD
