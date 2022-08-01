@@ -32,9 +32,9 @@ gae_lambda = 0.97 #lambda for generalized advantage estimation
 
 def epoch_results(data : dict) -> str:
     '''
-    ADD
+    Saves some epoch results as a csv-file. Still incomplete
     '''
-    
+
     data['TIME'] = str(datetime.now())
     data['LOSS'] = float(-2893.1)
     data['DURATION'] = str(timedelta(hours=5))
@@ -55,12 +55,11 @@ def epoch_results(data : dict) -> str:
         df.to_csv('train_data.csv', index=False)
         return f'Epoch results were stored in train_data.csv.'
 
-# define training functions
 
 # initialization
 duration = 10 #TODO: make duration a parameter
 
-# For testing, we should avoid manually inputting parameters
+# For now, we avoid manually inputting parameters
 """
 while duration == 0:
     print(f'Please select a training duration in hours after which training shall be stopped at earliest convenience: ')
@@ -88,9 +87,12 @@ except FileNotFoundError:
 # model initialization
 agent = CarRacingAgent(learning_rate)
 value_net = ValueNetwork(learning_rate)
-agent(tf.random.normal((10,96,96,1))) # create the graph by passing input once
+
+# create the graphs by passing input once
+agent(tf.random.normal((10,96,96,1)))
 value_net(tf.random.normal((10,96,96,1)))
 
+#try to load previously started training data (model weights)
 try:
     agent.load()
     value_net.load()
@@ -99,7 +101,6 @@ except FileNotFoundError:
     print(f'Warning: Unable to load weights, assuming model has not been trained before and starting training now.')
 
 # training loop
-
 for epoch in range(current_epoch, epochs):
     # creating data variables
     epoch_start = datetime.now()
@@ -159,5 +160,5 @@ for epoch in range(current_epoch, epochs):
     if (endtime - datetime.now()).seconds <= 0:
         break
 
-print(f'Scheduled a shutdown in 5mins that can be stopped with cmd("shutdown /a") if necessary')
-os.system("shutdown -s -t 300") # schedule a shutdown that can be stopped with cmd("shutdown /a") if necessary.
+#print(f'Scheduled a shutdown in 5mins that can be stopped with cmd("shutdown /a") if necessary')
+#os.system("shutdown -s -t 300") # schedule a shutdown that can be stopped with cmd("shutdown /a") if necessary.

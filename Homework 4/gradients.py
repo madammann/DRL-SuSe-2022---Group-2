@@ -17,9 +17,6 @@ def process_image(img):
     return img
 
 def sample_trajectories(env, model, buffer, steps=5000, render=False):
-    '''
-    ADD
-    '''
 
     observation, info = env.reset(return_info=True)
     observation = process_image(observation)

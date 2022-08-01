@@ -61,17 +61,11 @@ class CarRacingAgent(tf.keras.Model):
         return tfp.distributions.MultivariateNormalDiag(action, scale_diag = sigmas)
 
     def save(self, path='./weights.h5'):
-        '''
-        ADD
-        '''
-        
+
         self.save_weights(path)
     
     def load(self, path='./weights.h5'):
-        '''
-        ADD
-        '''
-        
+
         self.built = True
         self.load_weights(path)
 
@@ -126,16 +120,10 @@ class ValueNetwork(tf.keras.Model):
         return output
 
     def save(self, path='./val_weights.h5'):
-        '''
-        ADD
-        '''
         
         self.save_weights(path)
     
     def load(self, path='./val_weights.h5'):
-        '''
-        ADD
-        '''
         
         self.built = True
         self.load_weights(path)
