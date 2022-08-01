@@ -17,13 +17,16 @@ from multiprocessing.pool import ThreadPool
 car_racing_env = GrayScaleObservation(gym.make("CarRacing-v1"), keep_dim=True)
 
 # define epoch length
-epochs = 100
+epochs = 1000
 episodes_per_epoch = 20
 
+environment_steps = 5000 #how long the agent will act in the environment each episode if no terminal state is reached
+
 # define hyperparameters
-learning_rate = 0.0005
+learning_rate = 0.001
 
 discount_factor = 0.98 # gamma
+gae_lambda = 0.97 #lambda for generalized advantage estimation
 
 # define data storage functions
 
@@ -110,21 +113,19 @@ for epoch in range(current_epoch, epochs):
         #store trajectories in buffer
         buffer = dict(state = [], action = [], action_dist = [], reward = [], ret = [], terminal = [], advantage = [])
         # sample trajectories for 32 multithreaded episodes with each up to a maximum of 100 steps
-        #step_len = estimate_step_len()
         #TODO: include multithreading again - I suspect that deepcopying the environment does not work (track attribute not found)
         """
         args = [(copy.deepcopy(car_racing_env),agent,step_len) for _ in range(32)]
         results = ThreadPool(6).starmap(sample_trajectories,args)
         """
-        buffer, sum_reward = sample_trajectories(car_racing_env, agent, buffer, render = render)#, step_len)
+        buffer, sum_reward = sample_trajectories(car_racing_env, agent, buffer, environment_steps, render = render)
         reward_sums.append(sum_reward)
         render = False
-        
-        # TODO use results
-        # ADD
-        
-        policy_update_A2C(agent, value_net, buffer, discount_factor)
-        
+
+        #policy_update(agent, buffer, discount_factor) # basic policy gradient
+        #policy_update_A2C(agent, value_net, buffer, discount_factor) # A2C
+        policy_update_A2C_with_GAE(agent, value_net, buffer, discount_factor, gae_lambda) # A2C with GAE
+
         # TODO get stats
     
     # generate epoch data
