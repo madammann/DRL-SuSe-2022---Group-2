@@ -10,6 +10,27 @@ class MinimaxNode:
         self.children = []
         self.parent = parent
 
+class LeafGenerator:
+    '''
+    Generator object which receives a current position and generates the grids of all children of it.
+    '''
+    
+    def __init__(self, pos, depth, action_space):
+        self.pos = pos
+        self.depth = depth
+        self.idx = 0
+        self.action_space = action_space
+        
+    def __iter__(self):
+        '''
+        ADD
+        '''
+        
+        
+        
+        
+        yield 0
+    
 class Minimax:
     def __init__(self, env):
         self.starting = env

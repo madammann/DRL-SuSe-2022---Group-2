@@ -15,6 +15,7 @@ class ExperienceReplayBuffer:
     """
 
 
+
     def __init__(self, size = 10000, batch_size =32):
 
         """ Initialized the replay buffer. """
@@ -87,14 +88,19 @@ class ConnectFourModel(tf.keras.Model):
         Method to initialize the model using tf.keras.Model.
         """
 
-        super (ConnectFourModel, self).__init__()
+        super(ConnectFourModel, self).__init__()
 
-        self.input_layer = tf.keras.layers.Dense(units=8, activation='relu')
-        self.hidden = tf.keras.layers.Dense(units=20, activation='relu')
-        self.hidden2 = tf.keras.layers.Dense(units=20, activation='relu')
+        
+        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu')
+        self.conv2 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu')
+        self.conv3 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu')
+        self.conv4 = tf.keras.layers.Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu')
+        
+        self.glbavg = tf.keras.layers.GlobalAveragePooling2D()
+        
+        self.flatten = tf.keras.layers.Flatten()
+        
         self.output_layer = tf.keras.layers.Dense(units=4, activation='sigmoid')
-
-    
     
     @tf.function
     def __call__(self, x):
@@ -105,10 +111,14 @@ class ConnectFourModel(tf.keras.Model):
         :param x (tf.Tensor): The input to the model in shape (batch, xyz)
         :returns (tf.Tensor): The final output of the model as tensor of shape (batch, xyz)
         """
+        
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.conv4(x)
 
-        x = self.input_layer(x)
-        x = self.hidden(x)
-        x = self.hidden2(x)
+        x = self.glbavg(x)
+        x = self.flatten(x)
         x = self.output_layer(x)
 
         return x
