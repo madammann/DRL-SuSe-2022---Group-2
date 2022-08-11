@@ -8,7 +8,7 @@ class ConnectFourEnv:
     This is supposed to have the same functions, but creating one in OpenAI Gym seems like a bit overkill at the moment.
     '''
     
-    def __init__(self, size : tuple = (3,7), reward_setting={'step' : 1, 'draw' : 10, 'win' : 100}):
+    def __init__(self, size : tuple = (6,7), reward_setting={'step' : 1, 'draw' : 10, 'win' : 100}):
         '''
         Initialisation method for the environment.
         
