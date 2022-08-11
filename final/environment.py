@@ -8,7 +8,7 @@ class ConnectFourEnv:
     This is supposed to have the same functions, but creating one in OpenAI Gym seems like a bit overkill at the moment.
     '''
     
-    def __init__(self, size : tuple, reward_setting={'step' : 1, 'draw' : 10, 'win' : 100}):
+    def __init__(self, size : tuple = (3,7), reward_setting={'step' : 1, 'draw' : 10, 'win' : 100}):
         '''
         Initialisation method for the environment.
         
@@ -16,7 +16,7 @@ class ConnectFourEnv:
         :param reward_setting (dict): A dictionary with keys "step", "draw", and "win" with their respective rewards as integer.
         '''
         
-        self.size = (4, 4)
+        self.size = size
         
         if len(size) == 2 and size[0] >= 4 and size[1] >= 4:
             self.size = size
@@ -52,8 +52,8 @@ class ConnectFourEnv:
         '''
         Here we could later create a pygame-based rendering or some form of printout of the environment observation.
         '''
-        
-        pass
+        print(np.flip(self._grid,0).astype(int),"\n")
+
     
     def reset(self):
         '''
@@ -63,6 +63,8 @@ class ConnectFourEnv:
         self._grid = np.zeros(self.size)
         self.terminal = False
         self.winner = None
+
+        return self.grid2obs(), tf.constant(self.terminal, dtype='bool')
     
     def _action(self, action : int) -> tuple:
         '''
