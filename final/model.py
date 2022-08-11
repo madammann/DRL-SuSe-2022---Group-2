@@ -89,10 +89,10 @@ class ConnectFourModel(tf.keras.Model):
 
         super (ConnectFourModel, self).__init__()
 
-        self.input_layer = tf.keras.layers.Dense(activation='relu')
+        self.input_layer = tf.keras.layers.Dense(units=8, activation='relu')
         self.hidden = tf.keras.layers.Dense(units=20, activation='relu')
         self.hidden2 = tf.keras.layers.Dense(units=20, activation='relu')
-        self.output_layer = tf.keras.layers.Dense(units=7, activation='sigmoid')
+        self.output_layer = tf.keras.layers.Dense(units=4, activation='sigmoid')
 
     
     
