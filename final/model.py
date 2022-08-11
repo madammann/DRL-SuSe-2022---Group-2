@@ -1,7 +1,7 @@
 import numpy as np
 
 import tensorflow as tf
-import tensorflow_datasets as tfds
+#import tensorflow_datasets as tfds
 
 
 
@@ -15,7 +15,8 @@ class ExperienceReplayBuffer:
     """
 
 
-    def __init__(self, memory, size=10000, batch_size=32):
+
+    def __init__(self, size = 10000, batch_size =32):
 
         """ Initialized the replay buffer. """
 
@@ -119,7 +120,7 @@ class ConnectFourModel(tf.keras.Model):
         x = self.glbavg(x)
         x = self.flatten(x)
         x = self.output_layer(x)
-        
+
         return x
 
     def save(self, path='./weights.h5'):
