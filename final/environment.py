@@ -23,6 +23,7 @@ class ConnectFourEnv:
             
         self._grid = np.zeros(self.size)
         self.action_space = Discrete(self.size[0]) #discrete action space over all columns of grid
+        #TODO: Change observation space to include whose turn it is
         self.observation_space = Box(low=-1, high=1, shape=self.size, dtype='int') #discrete space with 0 for no plate, -1 for red, 1 for blue
         self.terminal = False
         self.winner = None
@@ -35,7 +36,7 @@ class ConnectFourEnv:
         
         :param (int): A discrete action sampled from all actions in the action space for the size of this specific grid.
         
-        :returns (tuple): A tuple of observation, reward, and terminal boolean for the resulting state after the action taken.
+        :returns (tuple): A tuple of observation (grid, turn), reward, and terminal boolean for the resulting state after the action taken.
         '''
         
         pos = self._action(action)
@@ -46,7 +47,7 @@ class ConnectFourEnv:
         self.terminal = self._verify_terminal(pos)
         reward = self._calculate_reward()
         
-        return self.grid2obs(), reward, tf.constant(self.terminal, dtype='bool')
+        return (self.grid2obs(), int(self.turn)), reward, tf.constant(self.terminal, dtype='bool')
     
     def render(self):
         '''
@@ -58,13 +59,15 @@ class ConnectFourEnv:
     def reset(self):
         '''
         Resets the environment to the starting state.
+
+        :returns (tuple): A tuple of observation (grid, turn) and terminal boolean for the resulting state after the action taken.
         '''
         
         self._grid = np.zeros(self.size)
         self.terminal = False
         self.winner = None
 
-        return self.grid2obs(), tf.constant(self.terminal, dtype='bool')
+        return (self.grid2obs(), int(self.turn)), tf.constant(self.terminal, dtype='bool')
     
     def _action(self, action : int) -> tuple:
         '''
@@ -111,8 +114,11 @@ class ConnectFourEnv:
         blue = np.array(self._grid == 2).astype('int16')
         red = np.array(self._grid == 1).astype('int16')
         obs = np.dstack([blue,red])
+
+        #First color in return (here blue) and a 2 in grid is the player who has opened the game
         
         return tf.constant(obs,'float32')
+
     
     def _get_chain_length(self, col : int, pos : tuple, delta : tuple) -> int:
         '''
