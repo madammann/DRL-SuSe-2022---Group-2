@@ -60,7 +60,6 @@ def train_on_buffer(model_q, model_target, samples, discount_factor = 0.99):
         model_q.optimizer.apply_gradients(zip(gradient, model_q.trainable_variables))
 
 
-
 def do_episode(model, epsilon = 0.1):
     '''
     Function to run a single episode, defined as starting to terminal state, with the model.
@@ -72,29 +71,43 @@ def do_episode(model, epsilon = 0.1):
     '''
     env = deepcopy(connect4_environment)
     buffer_queue = []
-    reward_sum = 0
+    reward_sum = np.zeros((2)) #returns for each player respectively
 
     # initialize environment
     observation, terminal = env.reset()
     terminal = False
+    first_move = True #a flag, because we can only train after the second move; optimally, we should have two agents
 
     # while no terminal state is reached we do actions
     while not terminal:
-        past_observation = observation
+        if first_move:
+            past_observation = observation[0]
+        else:
+            past_past_observation = past_observation
+            past_observation = observation[0]
+            past_action = action
 
         if np.random.random()<epsilon:
             #choosing exploration: take random action
             action = env.action_space.sample()
         else:
             #choosing greedy action: we input the observation to the model and chose a discrete action by applying the argmax over the output
-            policy = model(tf.expand_dims(observation,axis=0))
+            policy = model(tf.expand_dims(observation[0],axis=0))
             action = int(tf.argmax(policy,axis=1))
 
-        observation, reward, terminal= env.step(action)
-        buffer_queue += [[past_observation, action, reward, observation, terminal]]
+        observation, reward, terminal = env.step(action) #observation (tuple): grid, turn {whose turn the last move was}
+
+        if not first_move:
+            #TODO: Didn't check the reward assignment yet, could be that they need to be flipped in the buffer_queue
+            if observation[1]==0: #whose turn the last move was
+                buffer_queue += [[past_past_observation, past_action, reward[0], observation[0], terminal]]
+            else:
+                buffer_queue += [[tf.reverse(past_past_observation,[2]), past_action, reward[1], tf.reverse(observation[0],[2]), terminal]]
+
         reward_sum += reward
 
-    #env.close()
+        first_move = False
+
 
     return reward_sum, buffer_queue
 
