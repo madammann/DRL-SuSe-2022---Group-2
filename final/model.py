@@ -36,18 +36,17 @@ class ExperienceReplayBuffer:
         """
 
         if len(element) == 5 and type(element) == list:
-            appendix = [e for e in element[0]]+[element[1]]+[element[2]]+[e for e in element[3]]+[int(element[4])]
-            
+            appendix = element
             if type(self.memory) == np.ndarray:
-                appendix = np.array(appendix,dtype='float32')
+                appendix = np.array(appendix,dtype='object')
                 self.memory = np.vstack([self.memory,appendix])
                 
             else:
-                self.memory = np.array(appendix,dtype='float32')
+                self.memory = np.array(appendix,dtype='object')
                 self.memory = self.memory[-self.size:]
 
         else:
-            raise TypeError('The experience replay buffer can only append tuples of size 5.')
+            raise TypeError('The experience replay buffer can only append a list of size 5.')
 
     def sample(self):
         """
@@ -69,11 +68,17 @@ class ExperienceReplayBuffer:
             
 
     def preprocess(self, dataset):
-                
+        '''
+        ADD
+        '''
+        #still need to adjust shapes for the from_tensor_slices loader
         dataset = tf.data.Dataset.from_tensor_slices(dataset)
         
+        # convert data to right data type
+        dataset = dataset.map(lambda data: tf.cast(data,'float32'))
+        
         # convert data to tuple
-        dataset = dataset.map(lambda data: (data[0:8],data[8],data[9],data[10:18],data[18]))
+        dataset = dataset.map(lambda data: (data[0],data[1],data[2],data[3],data[4]))
         
         return dataset
 
