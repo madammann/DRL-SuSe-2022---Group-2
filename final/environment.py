@@ -42,7 +42,7 @@ class ConnectFourEnv:
         pos = self._action(action)
         
         if pos == None:
-            return self.grid2obs(), tf.constant([self.reward_setting['draw']]*2, dtype='float32'), tf.constant(self.terminal, dtype='bool')
+            return (self.grid2obs(), int(self.turn)), tf.constant([self.reward_setting['draw']]*2, dtype='float32'), tf.constant(self.terminal, dtype='bool')
         
         self.terminal = self._verify_terminal(pos)
         reward = self._calculate_reward()
@@ -53,7 +53,8 @@ class ConnectFourEnv:
         '''
         Here we could later create a pygame-based rendering or some form of printout of the environment observation.
         '''
-        print(np.flip(self._grid,0).astype(int),"\n")
+        print(np.flip(self._grid,0).astype(int))
+        print()
 
     
     def reset(self):

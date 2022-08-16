@@ -14,15 +14,39 @@ from model import *
 import environment
 
 
-# initialize the environment
-connect4_environment = environment.ConnectFourEnv()
+#define some parameters (others are parameters of function training)
+params = {
+    'connect_4_grid_size': (6,7), # vertical x horizontal
+    'model_learning_rate': 0.001,
+    'q_learning_discount_factor': 0.99 # gamma
+}
 
-# we initialize the model freshly (since this is a toy task weights will not be stored, only the training statistics for one complete run)
-model_q = ConnectFourModel()
-model_target = ConnectFourModel()
+def initialize_models(params):
+    # initialize the environment
+    connect4_environment = environment.ConnectFourEnv(size=params['connect_4_grid_size'])
+
+    # we initialize the models freshly
+    model_q = ConnectFourModel(params['connect_4_grid_size'], params['model_learning_rate'])
+    model_target = ConnectFourModel(params['connect_4_grid_size'], params['model_learning_rate'])
+
+    # create the graphs by passing input once
+    model_input_shape = (1, params['connect_4_grid_size'][0], params['connect_4_grid_size'][1], 2)
+
+    model_q(tf.random.normal(model_input_shape))
+    model_target(tf.random.normal(model_input_shape))
+
+    # try to load previously started training data (model weights)
+    try:
+        model_q.load()
+        update_target_network(model_q, model_target)
+
+    except FileNotFoundError:
+        print(f'Warning: Unable to load weights, assuming model has not been trained before and starting training now.')
+
+    return connect4_environment, model_q, model_target
 
 
-def train_on_buffer(model_q, model_target, samples, discount_factor = 0.99):
+def train_on_buffer(model_q, model_target, samples, discount_factor = params['q_learning_discount_factor']):
     '''
     Trains the model via single-step Delayed target Q-learning
 
@@ -105,9 +129,7 @@ def do_episode(model, epsilon = 0.1):
                 buffer_queue += [[tf.reverse(past_past_observation,[2]), past_action, reward[1], tf.reverse(observation[0],[2]), terminal]]
 
         reward_sum += reward
-
         first_move = False
-
 
     return reward_sum, buffer_queue
 
@@ -116,7 +138,7 @@ def update_target_network(model_q, model_target):
     for target_variable, source_variable in zip(model_target.trainable_variables, model_q.trainable_variables):
         target_variable.assign(source_variable)
 
-def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, update_target_network_every=20, epsilon=0.9, epsilon_decay=0.02):
+def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, update_target_network_every=10, epsilon=0.9, epsilon_decay=0.02, min_epsilon = 0.1):
 
     # we initialize the necessary buffer and environment
     buffer = ExperienceReplayBuffer(size=100000, batch_size=64)
@@ -128,7 +150,7 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, upda
 
     for epoch in range(epochs):
         avg_reward = []
-        new_counter = 0
+        new_counter = 0 #used for counting in which episodes to train the model
 
         for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch) + '/' + str(epochs) + ':'):
             # we do n training episodes in multithreading
@@ -142,7 +164,7 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, upda
                 avg_reward += [results[i][0]]
 
             new_counter += pool_size * 4
-            if new_counter > buffer.batch_size:
+            if new_counter > buffer.batch_size: #don't train every episode
                 train_on_buffer(model_q, model_target, buffer.sample())
                 new_counter = 0
 
@@ -151,8 +173,11 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, upda
                 update_target_network(model_q, model_target)
 
 
-        #Reduce exploration probability:
-        epsilon = epsilon * ((1-epsilon_decay)**pool_size)
+        #Reduce exploration probability: (after training, exploration should be zero, though)
+        if epsilon > min_epsilon:
+            epsilon = epsilon * ((1-epsilon_decay)**pool_size)
+        else:
+            epsilon = min_epsilon
 
         # we take the mean over the epoch and store it
         avg_reward = tf.reduce_mean(avg_reward).numpy()
@@ -164,4 +189,5 @@ def training(model_q, model_target, episodes=100, pool_size=10, epochs=100, upda
 
     return epoch_returns
 
+connect4_environment, model_q, model_target = initialize_models(params)
 training(model_q, model_target)

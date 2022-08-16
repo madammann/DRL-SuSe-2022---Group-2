@@ -4,7 +4,6 @@ import tensorflow as tf
 #import tensorflow_datasets as tfds
 
 
-
 class ExperienceReplayBuffer:
 
     """ 
@@ -59,9 +58,9 @@ class ExperienceReplayBuffer:
             sample_indices = np.random.choice(np.arange(0, len(self.memory)), self.batch_size, replace=False)
             samples = [self.memory[idx] for idx in sample_indices]
             
-            data = self.preprocess(samples)
+            #data = self.preprocess(samples)
             
-            return data
+            return samples
         
         else:
             raise AttributeError('A sample was requested but the memory was not yet filled enough to provide one.')
@@ -87,7 +86,7 @@ class ConnectFourModel(tf.keras.Model):
     A Connect-4 Model to play in the Connect-4 environment.     
     """
 
-    def __init__ (self):
+    def __init__ (self, grid_size, learning_rate):
 
         """"
         Method to initialize the model using tf.keras.Model.
@@ -105,8 +104,11 @@ class ConnectFourModel(tf.keras.Model):
         
         self.flatten = tf.keras.layers.Flatten()
         
-        self.output_layer = tf.keras.layers.Dense(units=4, activation='sigmoid')
-    
+        self.output_layer = tf.keras.layers.Dense(units=grid_size[1], activation='sigmoid')
+
+        self.loss = tf.keras.losses.MeanSquaredError()
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
     @tf.function
     def __call__(self, x):
 
