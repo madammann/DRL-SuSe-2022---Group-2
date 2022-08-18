@@ -4,17 +4,23 @@ from env import ConnectFourEnv
 
 from multiprocessing.Pool import ThreadPool
 
-#write warning for larger action space or larger depth choice
-
 class MinimaxNode:
     def __init__(self, move : int, parent=None):
         '''
-        ADD
+        A node object for the Minimax search tree.
+        
+        :att move (int): An integer representing the action taken to arrive at this node's position.
+        :att value (float): A float value representing the value for the current player between -1 and 1.
+        :att proven (bool): A boolean value whether this is the game-theoretical value.
+        :att visited (bool): A boolean value whether this node was visited already, used in minimax search for efficient traversal.
+        :att children (list): A list of all integer indices for all children.
+        :att parent (int): Either none if root, else an integer representing the parent of the depth-1 layer of the tree.
         '''
         
         self.move = move
         self.value = float(0)
         self.proven = False
+        self.visited = False
         self.children = []
         self.parent = parent
     
@@ -22,6 +28,11 @@ class Minimax:
     def __init__(self, env, depthmax=6):
         '''
         ADD
+        
+        Warning: Using a depthmax too large or even a smaller depthmax with a high branching factor may result in exploding complexity!
+        
+        :param env (ConnectFourEnv): A Connect-4 environment representing the starting or root state.
+        :param depthmax (int): The maximum depth of the tree.
         '''
         
         self.starting = env
@@ -29,76 +40,147 @@ class Minimax:
         self.depthmax = depthmax
         self.tree = {0 : [MinimaxNode(None)]}
         
+        if len(self.action_space)**depthmax >= 10e8:
+            raise ValueError('The tree to be created would be too large, reduce branching factor or depth.')
+        
         for depth in range(depthmax):
             self.tree[depth] = []
             
             for i, node in enumerate(self.tree[depth-1]):
                 self.tree[depth] += self._add_child_nodes(i)
+                
+#     def generate_children_tree(moves : tuple):
+#         '''
+#         This method generates an impartial tree for the next minimax search two moves after the parent tree.
+        
+#         :param moves (tuple): A tuple of the two last moves as integers.
+        
+#         :returns (Minimax): A Minimax object with the new parameters ready to receive a call.
+#         '''
+        
+#         if len(moves) == 2:
+#             self.starting = self.starting.step(moves[0])
+#             self.starting = self.starting.step(moves[1])
+#         else:
+#             raise ValueError('The provided parameter for moves has incorrect length.')
+        
+#         #add self.tree manip here
+        
+#         return self
     
     def __call__(self, player : bool, eval_func=None):
         '''
-        ADD
+        The call method for Minimax tree search.
+        
+        ::
+        ::
+        
+        :returns (list): A list.
         '''
         
-        #integrate test for terminal base state and for true depthmax for close to terminal states
-        
-        depth = 0
-        
-        while depth =< self.depthmax:
-            for i, node in enumerate(self.tree[depth]):
-                None
-                
-                #propagate true result of s_t upward as soon as all successor states S_t+1 have been evaluated
-                if i % len(self.action_space) == 0:
-                    self._uppropagate(depth-1,node.parent)
-                
-    
-    def _uppropagate(self, startdepth : int, parent : int):
-        '''
-        ADD
-        '''
-        
-        depth = startdepth
-        
-        #unless broken uppropagate in this loop until before reaching the root
-        while depth > 0:
-            
-            #test if all information for current propagation is available
-            if not startdepth and all([True]):
-                pass
-            
-            #break the loop in case there is not enough information available for the next propagation
-            else:
-                pass
-            
-    def _downpropagate(self, depth : int, index : int):
         pass
-            
     
-    def _get_parent_chain(self, depth, index, chain=[]):
+    def _gather_next_startpoints(self, depth : int) -> list:
+        '''
+        :returns (list): A list of tuples for arguments to use in a multithread call of form [(depth,index)]
+        '''
+        
+        args = []
+        for i, node in enumerate(self.tree[depth]):
+            if not node.visited:
+                args += [(depth,i)]
+        
+        # if no nodes where colleted, assume all were visited and go to the next depth unless at max depth
+        if len(args) == 0:
+            if depth < self.depthmax:
+                return self._gather_next_startpoints(depth+1)
+            
+        else:
+            return args
+        
+    def _generate_endpoint_and_evaluate(depth : int, index : int, eval_func=None):
         '''
         ADD
+        '''
+        
+        node = index
+        for depth in range(depth, self.depthmax-1):
+            node = self.tree[c_depth][node].children[0]
+        
+        #get the current state's value
+        self._get_value_at(self.depthmax, node, eval_func=eval_func)
+        
+    def _downpropagate(self, depth : int, index : int, value : float):
+        '''
+        Method for downpropagating the value of a node to all its children.
+        Important note: This method must be called on the first child first since it used negative value of parent.
+        
+        :param depth (int): The depth of the current state in the tree.
+        :param index (int): The index of the node for the current state at selected depth.
+        :param value (float): The value of the parent state
+        '''
+        
+        #value assignments for the node at depth, index
+        self.tree[depth][index].value = -value #use the negative value of the parent
+        self.tree[depth][index].proven = True
+        self.tree[depth][index].visited = True
+        
+        children = self.tree[depth][index].children
+        
+        #if the current depth is not the maximum depth
+        if depth < max(list(self.tree.keys())):
+            for idx in children:
+                self._downpropagate(depth+1, idx, -value)
+    
+    def _get_parent_chain(self, depth : int, index : int, chain=[]) -> list:
+        '''
+        Method for recursively reconstructing a list of moves to reach the current node in the tree.
+        This list includes the move of the node at index at depth and all it's parental moves.
+        This enables playing the list down from the starting environment to arrive at the current environment.
+        
+        :param depth (int): The depth of the current state in the tree.
+        :param index (int): The index of the node for the current state at selected depth.
+        
+        :returns (list): An ordered list of moves to be played from the starting state to arrive at current state.
         '''
         
         chain = chain
-        
         chain += [self.tree[depth][index].move]
         
-        return chain[::-1]
+        #recursively get the next element by going down in depth and getting the parental index
+        if depth > 0:
+            return self._get_parent_chain(depth-1, self.tree[depth][index].parent, chain=chain)
+        
+        else:
+            return chain[::-1]
     
-    def _get_value_at(self, chain, eval_func=None):
+    def _get_value_at(self, depth, index, eval_func=None):
         '''
-        ADD
+        Method for getting the value of a state.
+        Either uses an evaluation function or the true value if known.
+        If no evaluation function is provided this method will assume all states not-yet-terminal to have a value of 0.
+        Values for evaluation functions need to be within the range of -1 and 1, true values will be represented by setting the node to proven.
+        
+        :param depth (int): The depth of the current state in the tree.
+        :param index (int): The index of the node for the current state at selected depth.
+        :param eval_func (func): Any python object which has a call function which accepts a call with the two parameters observation and player and returns a value between -1 and 1.
+        
+        :returns (float): A float value representing the value of a specific state.
         '''
         
         env = deepcopy(self.starting)
+        
+        chain = self._get_parent_chain(depth, index)
         
         for move in chain:
             if not env.terminal:
                 env.step(move)
                 
+                #if the environment is terminal before reaching the end of the move chain, set terminal node to proven and downpropagate
                 if env.terminal:
-                    return 'ADD'
+                    value = 1 if env.winner == env.turn else -1
+                    
+                    return value
             
             else:
                 pass
