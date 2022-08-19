@@ -1,8 +1,8 @@
 import numpy as np
 from copy import deepcopy
-from env import ConnectFourEnv
+from environment import ConnectFourEnv
 
-from multiprocessing.Pool import ThreadPool
+from multiprocessing.pool import ThreadPool
 
 class MinimaxNode:
     def __init__(self, move : int, parent=None):
@@ -25,9 +25,26 @@ class MinimaxNode:
         self.parent = parent
     
 class Minimax:
+    '''
+    Minimax tree search class for Connect-4 environments, written mostly unspecific so other enviornments may also work.
+    To use this class create an object by calling the __init__ method useing an environment of the starting state and a maximum search depth.
+    Make sure to watch that the action space branching factor is not too high so the maximum depth does not make it explode.
+    
+    ABOUT THE ENVIRONMENT
+    
+    USAGE EXPL
+    
+    :att starting (ConnectFourEnv): The starting state environment passed (certain attributes of env are required).
+    :att action_space (func): A range function for the action space of the environment.
+    :att depthmax (int): The maximum search depth.
+    :att tree (dict): The search tree as a mapping from depth to a list of node objects.
+    '''
     def __init__(self, env, depthmax=6):
         '''
-        ADD
+        The initialization method for the class.
+        Checks if the to-be-created tree has less or equal to 100.000.000 nodes and if yes creates the whole tree with empty values.
+        If not it will produce an error.
+        To get the actual search results the call method has to be used.
         
         Warning: Using a depthmax too large or even a smaller depthmax with a high branching factor may result in exploding complexity!
         
@@ -46,8 +63,11 @@ class Minimax:
         for depth in range(depthmax):
             self.tree[depth] = []
             
+            #loop for adding children and creating a bidirectional reference
             for i, node in enumerate(self.tree[depth-1]):
+                c_idx = len(self.tree[depth])
                 self.tree[depth] += self._add_child_nodes(i)
+                self.tree[depth-1][i].children = list(range(c_idx,c_idx+len(self.action_space))) #reference from parent to children
                 
 #     def generate_children_tree(moves : tuple):
 #         '''
@@ -78,6 +98,10 @@ class Minimax:
         :returns (list): A list.
         '''
         
+        while True:
+            pass
+            #gather all unvisited nodes of current depth
+        
         pass
     
     def _gather_next_startpoints(self, depth : int) -> list:
@@ -105,7 +129,7 @@ class Minimax:
         
         node = index
         for depth in range(depth, self.depthmax-1):
-            node = self.tree[c_depth][node].children[0]
+            node = self.tree[c_depth][node].children[0] #chose first child of current node until at leaf
         
         #get the current state's value
         self._get_value_at(self.depthmax, node, eval_func=eval_func)
@@ -154,7 +178,7 @@ class Minimax:
         else:
             return chain[::-1]
     
-    def _get_value_at(self, depth, index, eval_func=None):
+    def _get_value_at(self, depth : int, index : int, eval_func=None):
         '''
         Method for getting the value of a state.
         Either uses an evaluation function or the true value if known.
@@ -172,28 +196,53 @@ class Minimax:
         
         chain = self._get_parent_chain(depth, index)
         
-        for move in chain:
+        for i, move in enumerate(chain):
             if not env.terminal:
                 env.step(move)
                 
                 #if the environment is terminal before reaching the end of the move chain, set terminal node to proven and downpropagate
                 if env.terminal:
-                    value = 1 if env.winner == env.turn else -1
+                    value = 1 if env.winner != env.turn else -1 #if current player to move is not winner (meaning the move to this was a winning move), set to 1, else -1
                     
-                    return value
-            
-            else:
-                pass
-            pass
-        pass
-    
-        def _add_child_nodes(self, parent_idx) -> list:
-        '''
-        ADD
-        '''
+                    #find terminal point as depth or the parent of depth currently at
+                    terminal_chain_len = len(chain[i:]) #length is chain after element i
+                    
+                    #go terminal_chain_len upwards while setting the nodes to visited from depth index
+                    d, idx = self.depthmax, 0
+                    for step in range(terminal_chain_len):
+                        self.tree[d][idx].visited = True
+                        d, idx = d-1, self.tree[d][idx].parent
+                    
+                    #set the value for the node at terminal
+                    self.tree[d][idx].value = value
+                    
+                    #do the proven rule for a win leading to the parent being a loss
+                    if value == -1:
+                        d, idx = d-1, self.tree[d][idx].parent
+                        self.tree[d][idx].value = -value
+                    
+                    return #used here to prevent execution of last part
+                
+        #after the loop the depth and index are reached and the environment is in the right state
+        value = 0
+        if eval_func != None:
+            value = eval_func(env.observation(), env.turn)
         
-        children = []
-        for action in self.action_space:
-            children += [MinimaxNode(action,parent_idx)]
+        self.tree[depth][index].value = value
+        self.tree[depth][index].visited = True
+        
+        def _add_child_nodes(self, parent_idx : int) -> list:
+            '''
+            Method for adding all possible children of a parent given an environment.
+            This method returns the children nodes, the return value may be used for dictionary entries.
             
-        return children
+            :param parent_idx (int): The index of a parent, used for reference linking from children to parent.
+            
+            :returns (list): A list of MinimaxNode objects with correct references to parent.
+            '''
+        
+            children = []
+            for action in self.action_space:
+                children += [MinimaxNode(action,parent_idx)]
+            
+            return children
