@@ -23,6 +23,7 @@ class ConnectFourEnv:
             
         self._grid = np.zeros(self.size)
         self.action_space = Discrete(self.size[0]) #discrete action space over all columns of grid
+        self.action_range = range(self.size[0])
         #TODO: Change observation space to include whose turn it is
         self.observation_space = Box(low=-1, high=1, shape=self.size, dtype='int') #discrete space with 0 for no plate, -1 for red, 1 for blue
         self.terminal = False
