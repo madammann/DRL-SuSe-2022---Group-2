@@ -211,19 +211,20 @@ class Minimax:
                     terminal_chain_len = len(chain[i:]) #length is chain after element i
                     
                     #go terminal_chain_len upwards while setting the nodes to visited from depth index
-                    d, idx = self.depthmax, 0
-                    #here is the next error!
+                    idx = 0
+                    
                     for step in range(terminal_chain_len):
-                        self.tree[d][idx].visited = True
-                        d, idx = d-1, self.tree[d][idx].parent
+                        print(d, step, idx)
+                        self.tree[self.depthmax-step][idx].visited = True
+                        idx = self.tree[self.depthmax-step][idx].parent
                     
                     #set the value for the node at terminal
-                    self.tree[d][idx].value = value
+                    self.tree[self.depthmax][idx].value = value
                     
                     #do the proven rule for a win leading to the parent being a loss
                     if value == -1:
-                        d, idx = d-1, self.tree[d][idx].parent
-                        self.tree[d][idx].value = -value
+                        idx = self.tree[self.depthmax][idx].parent
+                        self.tree[self.depthmax-1][idx].value = -value
                     
                     return #used here to prevent execution of last part
                 
