@@ -103,6 +103,9 @@ class Minimax:
             depth = 1
             args = self.gather_next_startpoints(depth)
             results = ThreadPool(len(args)).starmap(self.generate_endpoint_and_evaluate,args)
+            print(results)
+            queue = [sublst for lst in results for sublst in lst]
+            self.process_queue(queue)
             
             break
             depth += 1
@@ -135,7 +138,7 @@ class Minimax:
             node = self.tree[depth][node].children[0] #chose first child of current node until at leaf
         
         #get the current state's value
-        self.get_value_at(self.depthmax, node, eval_func=eval_func)
+        return self.get_value_at(self.depthmax, node, eval_func=eval_func)
         
     def downpropagate(self, depth : int, index : int, value : float):
         '''
@@ -171,7 +174,7 @@ class Minimax:
         :returns (list): An ordered list of moves to be played from the starting state to arrive at current state.
         '''
         
-        chain = chain
+        chain = deepcopy(chain) #not ideal but fixes error
         chain += [self.tree[depth][index].move]
         
         #recursively get the next element by going down in depth and getting the parental index
@@ -180,6 +183,24 @@ class Minimax:
         
         else:
             return chain[::-1]
+    
+    def process_queue(self, queue):
+        '''
+        ADD
+        '''
+        
+        for d, idx, var, val in queue:
+            if var == 'visited':
+                self.tree[d][idx].visited = val
+            
+            elif var == 'proven':
+                self.tree[d][idx].proven = val
+            
+            elif var == 'value':
+                self.tree[d][idx].value = val
+    
+    def validate_proven(self):
+        pass
     
     def get_value_at(self, depth : int, index : int, eval_func=None):
         '''
@@ -199,6 +220,8 @@ class Minimax:
         
         chain = self.get_parent_chain(depth, index)
         
+        queue = []
+        
         for i, move in enumerate(chain):
             if not env.terminal:
                 env.step(move)
@@ -209,32 +232,40 @@ class Minimax:
                     
                     #find terminal point as depth or the parent of depth currently at
                     terminal_chain_len = len(chain[i:]) #length is chain after element i
-                    
                     #go terminal_chain_len upwards while setting the nodes to visited from depth index
-                    idx = 0
+                    idx, d = 0, self.depthmax
                     
-                    for step in range(terminal_chain_len):
-                        print(d, step, idx)
-                        self.tree[self.depthmax-step][idx].visited = True
-                        idx = self.tree[self.depthmax-step][idx].parent
+                    for _ in range(terminal_chain_len):
+#                         self.tree[d][idx].visited = True
+                        queue += [(d,idx,'visited',True)]
+                        d, idx = d-1, self.tree[d][idx].parent
                     
                     #set the value for the node at terminal
-                    self.tree[self.depthmax][idx].value = value
+#                     self.tree[d][idx].value = value
+                    queue += [(d,idx,'value',value)]
+                    queue += [(d,idx,'visited',True)]
+
                     
                     #do the proven rule for a win leading to the parent being a loss
                     if value == -1:
-                        idx = self.tree[self.depthmax][idx].parent
-                        self.tree[self.depthmax-1][idx].value = -value
+                        idx = self.tree[d][idx].parent
+#                         self.tree[d-1][idx].value = -value
+                        queue += [(d-1,idx,'value',-value)]
+                        queue += [(d-1,idx,'visited',True)]
                     
-                    return #used here to prevent execution of last part
+                    return queue # we return here to prevent execution of later part.
                 
         #after the loop the depth and index are reached and the environment is in the right state
         value = 0
         if eval_func != None:
             value = eval_func(env.observation(), env.turn)
         
-        self.tree[depth][index].value = value
-        self.tree[depth][index].visited = True
+#         self.tree[depth][index].value = value
+        queue += [(depth,index,'value',value)]
+#         self.tree[depth][index].visited = True
+        queue += [(depth,index,'visited',True)]
+        
+        return queue
         
     def add_child_nodes(self, parent_idx : int) -> list:
         '''
