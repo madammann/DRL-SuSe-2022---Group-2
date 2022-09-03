@@ -99,17 +99,52 @@ class Minimax:
         :returns (list): A list.
         '''
         
-        while True:
-            depth = 1
+        proven = False
+        depth = 1
+        
+        #loops until all nodes are visited or until confirmed proven result for depth=1
+        while not proven:
+            #step 1: Gather all unvisited nodes from current depth
             args = self.gather_next_startpoints(depth)
+            
+            #step 2: traverse down until last depth from each selected node and update the tree with the results (also handles proven case win -> parent loss)
             results = ThreadPool(len(args)).starmap(self.generate_endpoint_and_evaluate,args)
-            print(results)
             queue = [sublst for lst in results for sublst in lst]
             self.process_queue(queue)
+
+            #step 3: tests for proven case all children proven -> parent.val = min(children.val)
+            self.validate_proven(depth)
             
-            break
+            # adjust depth and test proven
             depth += 1
-    
+            proven = True if all(node.proven for node in self.tree[1]) else False
+            # also make sure to stop once depth would exceed maximum
+            if depth > self.depthmax:
+                proven = True
+        
+        #next loop to propagate values up the tree via the actual minmax operation (depth here is used as a subtrahend, minus 1 is applied to prevent accessing the -1th element later for one operation)
+        for depth in range(self.depthmax-1):
+            #loop over all parents of the current step and for each set its value to the minmax based around uneven or even depth based on starting.turn
+            for i, parent in enumerate(self.tree[self.depthmax-depth-1]):
+                #only change value if the current node is not proven
+                if not parent.proven:
+                    if self.depthmax-depth % 2 == 0:
+                        #the maximum of the children values is the parent value, since player wants to maximize
+                        value = max([self.tree[self.depthmax-depth][idx].value for idx in parent.children]) #no need to negate in this place since already done in value assignment
+                        self.tree[self.depthmax-depth-1][i].value = value
+                    
+                    else:
+                        #the minimum of the children values is the parent value, since oponent tries to maximize, ergo minimize player
+                        value = min([self.tree[self.depthmax-depth][idx].value for idx in parent.children])
+                        self.tree[self.depthmax-depth-1][i].value = value
+        
+        #return a list of values from depth 1 finally to call argmax on for a move choice (since turn is from perspective of player with first move also make sure to invert for other player)
+        if player == self.starting.turn:
+            return [node.value for node in self.tree[1]]
+        
+        else:
+            return [-node.value for node in self.tree[1]]
+        
     def gather_next_startpoints(self, depth : int) -> list:
         '''
         :returns (list): A list of tuples for arguments to use in a multithread call of form [(depth,index)]
@@ -120,7 +155,7 @@ class Minimax:
             if not node.visited:
                 args += [(depth,i)]
         
-        # if no nodes where colleted, assume all were visited and go to the next depth unless at max depth
+        #if no nodes where colleted, assume all were visited and go to the next depth unless at max depth
         if len(args) == 0:
             if depth < self.depthmax:
                 return self.gather_next_startpoints(depth+1)
@@ -139,28 +174,6 @@ class Minimax:
         
         #get the current state's value
         return self.get_value_at(self.depthmax, node, eval_func=eval_func)
-        
-    def downpropagate(self, depth : int, index : int, value : float):
-        '''
-        Method for downpropagating the value of a node to all its children.
-        Important note: This method must be called on the first child first since it used negative value of parent.
-        
-        :param depth (int): The depth of the current state in the tree.
-        :param index (int): The index of the node for the current state at selected depth.
-        :param value (float): The value of the parent state
-        '''
-        
-        #value assignments for the node at depth, index
-        self.tree[depth][index].value = -value #use the negative value of the parent
-        self.tree[depth][index].proven = True
-        self.tree[depth][index].visited = True
-        
-        children = self.tree[depth][index].children
-        
-        #if the current depth is not the maximum depth
-        if depth < max(list(self.tree.keys())):
-            for idx in children:
-                self.downpropagate(depth+1, idx, -value)
     
     def get_parent_chain(self, depth : int, index : int, chain=[]) -> list:
         '''
@@ -199,8 +212,25 @@ class Minimax:
             elif var == 'value':
                 self.tree[d][idx].value = val
     
-    def validate_proven(self):
-        pass
+    def validate_proven(self, depth : int):
+        '''
+        ADD
+        '''
+        
+        for parent_idx, parent_node in enumerate(self.tree[depth-1]):
+            proven = [self.tree[depth][child_idx].proven for child_idx in self.tree[depth-1][parent_idx].children]
+            
+            #if all children are proven losses make minimum value the value of parent node
+            if all(proven) and depth-1 > 0:
+                values = [self.tree[depth][child_idx].value for child_idx in self.tree[depth-1][parent_idx].children]
+                
+                if all([val == 1 for val in values]):
+                    self.tree[depth-1][parent_idx].value = 1
+                    self.tree[depth-1][parent_idx].proven = True
+                    
+                elif all([val == -1 for val in values]):
+                    self.tree[depth-1][parent_idx].value = -1
+                    self.tree[depth-1][parent_idx].proven = True
     
     def get_value_at(self, depth : int, index : int, eval_func=None):
         '''
@@ -213,57 +243,69 @@ class Minimax:
         :param index (int): The index of the node for the current state at selected depth.
         :param eval_func (func): Any python object which has a call function which accepts a call with the two parameters observation and player and returns a value between -1 and 1.
         
-        :returns (float): A float value representing the value of a specific state.
+        :returns (list): ADD
         '''
         
         env = deepcopy(self.starting)
         
         chain = self.get_parent_chain(depth, index)
+        terminal_depth = None
         
         queue = []
         
+        #traverse down and store terminal index using environment
         for i, move in enumerate(chain):
             if not env.terminal:
                 env.step(move)
                 
-                #if the environment is terminal before reaching the end of the move chain, set terminal node to proven and downpropagate
-                if env.terminal:
-                    value = 1 if env.winner != env.turn else -1 #if current player to move is not winner (meaning the move to this was a winning move), set to 1, else -1
-                    
-                    #find terminal point as depth or the parent of depth currently at
-                    terminal_chain_len = len(chain[i:]) #length is chain after element i
-                    #go terminal_chain_len upwards while setting the nodes to visited from depth index
-                    idx, d = 0, self.depthmax
-                    
-                    for _ in range(terminal_chain_len):
-#                         self.tree[d][idx].visited = True
-                        queue += [(d,idx,'visited',True)]
-                        d, idx = d-1, self.tree[d][idx].parent
-                    
-                    #set the value for the node at terminal
-#                     self.tree[d][idx].value = value
-                    queue += [(d,idx,'value',value)]
-                    queue += [(d,idx,'visited',True)]
-
-                    
-                    #do the proven rule for a win leading to the parent being a loss
-                    if value == -1:
-                        idx = self.tree[d][idx].parent
-#                         self.tree[d-1][idx].value = -value
-                        queue += [(d-1,idx,'value',-value)]
-                        queue += [(d-1,idx,'visited',True)]
-                    
-                    return queue # we return here to prevent execution of later part.
+            else:
+                terminal_depth = i #calculate the depth of the terminal state
                 
-        #after the loop the depth and index are reached and the environment is in the right state
-        value = 0
-        if eval_func != None:
-            value = eval_func(env.observation(), env.turn)
+        #append items to queue based on cases
+        #case 1: there was no terminal index
+        if terminal_depth == None:
+            #call evalutation function if given on environment after traversal
+            value = 0
+            if eval_func != None:
+                value = eval_func(env.observation(), self.starting.turn)
+                
+            #make last step in queue which has known index and depth a non-proven visited node with said value
+            queue += [(depth, index,'visited',True)]
+            queue += [(depth, index,'value',value)]
+            
+            #make all yet unvisited parents of that node visited
+            idx = self.tree[depth][index].parent
+            d = depth-1
+            while not self.tree[d][idx].visited and d >= 1:
+                queue += [(d, idx,'visited',True)]
+                idx = self.tree[d][idx].parent
+                d = d-1
         
-#         self.tree[depth][index].value = value
-        queue += [(depth,index,'value',value)]
-#         self.tree[depth][index].visited = True
-        queue += [(depth,index,'visited',True)]
+        #case 2: there was a terminal index
+        else:
+            #find value of terminal node
+            value = 1 if env.winner == self.starting.turn else -1 #value is based on root node player perspective
+            
+            #move up the chain from last element until a visited node is reached, if still before terminal index, make proven terminal (also handle proven case of win -> parent loss)
+            idx = index
+            d = depth
+            while not self.tree[d][idx].visited and d >= 1:
+                #make node visited
+                queue += [(d, idx,'visited',True)]
+                
+                #if depth lower or equal to terminal depth make proven and set value
+                if d >= terminal_depth-1:
+                    queue += [(d, idx,'proven',True)]
+                    queue += [(d, idx,'value',value)]
+                    
+#                 #proven rule for terminal wins we handle here by overwriting the parent of terminal depth here even if already visited
+#                 if d == terminal_depth:
+#                     queue += [(d-1, self.tree[d][idx].parent,'proven',True)]
+#                     queue += [(d-1, self.tree[d][idx].parent,'value',value)] #since we use player perspective parent of terminal shares same value, no inversion to negative value
+                    
+                #increment depth and index
+                idx = self.tree[d][idx].parent
+                d = d-1
         
         return queue
         
