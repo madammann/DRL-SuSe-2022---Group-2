@@ -1,8 +1,9 @@
 import numpy as np
-from copy import deepcopy
-from environment import ConnectFourEnv
 
+from copy import deepcopy
 from multiprocessing.pool import ThreadPool
+
+from environment import ConnectFourEnv
 
 class MinimaxNode:
     def __init__(self, move : int, parent=None):
@@ -30,10 +31,6 @@ class Minimax:
     To use this class create an object by calling the __init__ method useing an environment of the starting state and a maximum search depth.
     Make sure to watch that the action space branching factor is not too high so the maximum depth does not make it explode.
     
-    ABOUT THE ENVIRONMENT
-    
-    USAGE EXPL
-    
     :att starting (ConnectFourEnv): The starting state environment passed (certain attributes of env are required).
     :att action_space (func): A range function for the action space of the environment.
     :att depthmax (int): The maximum search depth.
@@ -60,7 +57,7 @@ class Minimax:
         if len(self.action_space)**depthmax >= 10e8:
             raise ValueError('The tree to be created would be too large, reduce branching factor or depth.')
         
-        # here range(1,d+1) is chosen to match dictionary keys properly
+        #here range(1,d+1) is chosen to match dictionary keys properly
         for depth in range(1,depthmax+1):
             self.tree[depth] = []
             
@@ -69,7 +66,8 @@ class Minimax:
                 c_idx = len(self.tree[depth])
                 self.tree[depth] += self.add_child_nodes(i)
                 self.tree[depth-1][i].children = list(range(c_idx,c_idx+len(self.action_space))) #reference from parent to children
-                
+
+# THIS FEATURE CAN BE IMPLEMENTED LATER IF TIME ALLOWS:
 #     def generate_children_tree(moves : tuple):
 #         '''
 #         This method generates an impartial tree for the next minimax search two moves after the parent tree.
@@ -89,14 +87,18 @@ class Minimax:
         
 #         return self
     
-    def __call__(self, player : bool, eval_func=None):
+    def __call__(self, player : bool, eval_func=None) -> list:
         '''
         The call method for Minimax tree search.
+        Evaluates game-theoretical true values and values based on evaluation function for entire tree.
+        Afterwards also returns values for all children of current state as list from perspective of selected player.
         
-        ::
-        ::
+        Warning: Evaluation functions have to accept the parameters observation (tf.Tensor(M,N,2)) and player (bool) and return a value between -1 and 1 based on player perspective.
         
-        :returns (list): A list.
+        :player (bool): The player whose perspective shall be assumed, true equals player one from environment.
+        :eval_func: Any python object callable accepting a call with the two parameters observation and player and returns a value between -1 and 1.
+        
+        :returns (list): A list of values for depth=1 of the tree to call an argmax on if current player.
         '''
         
         proven = False
@@ -115,10 +117,11 @@ class Minimax:
             #step 3: tests for proven case all children proven -> parent.val = min(children.val)
             self.validate_proven(depth)
             
-            # adjust depth and test proven
+            #adjust depth and test proven
             depth += 1
             proven = True if all(node.proven for node in self.tree[1]) else False
-            # also make sure to stop once depth would exceed maximum
+            
+            #also make sure to stop once depth would exceed maximum
             if depth > self.depthmax:
                 proven = True
         
@@ -128,14 +131,14 @@ class Minimax:
             for i, parent in enumerate(self.tree[self.depthmax-depth-1]):
                 #only change value if the current node is not proven
                 if not parent.proven:
-                    if self.depthmax-depth % 2 == 0:
+                    if (self.depthmax-depth) % 2 != 0:
                         #the maximum of the children values is the parent value, since player wants to maximize
-                        value = max([self.tree[self.depthmax-depth][idx].value for idx in parent.children]) #no need to negate in this place since already done in value assignment
+                        value = np.max([self.tree[self.depthmax-depth][idx].value for idx in parent.children]) #no need to negate in this place since already done in value assignment
                         self.tree[self.depthmax-depth-1][i].value = value
                     
                     else:
                         #the minimum of the children values is the parent value, since oponent tries to maximize, ergo minimize player
-                        value = min([self.tree[self.depthmax-depth][idx].value for idx in parent.children])
+                        value = np.min([self.tree[self.depthmax-depth][idx].value for idx in parent.children])
                         self.tree[self.depthmax-depth-1][i].value = value
         
         #return a list of values from depth 1 finally to call argmax on for a move choice (since turn is from perspective of player with first move also make sure to invert for other player)
@@ -147,6 +150,12 @@ class Minimax:
         
     def gather_next_startpoints(self, depth : int) -> list:
         '''
+        Method for collecting arguments to use in self.generate_endopoint_and_evaluate using ThreadPools.
+        Selects all unvisited nodes at depth and traverses them down, always selecting the first child, until at max depth.
+        Then returns a list of all the nodes selected as depth and index tuple.
+        
+        :param depth (int): The depth in the tree where the search for startpoints shall take place at.
+        
         :returns (list): A list of tuples for arguments to use in a multithread call of form [(depth,index)]
         '''
         
@@ -165,7 +174,13 @@ class Minimax:
         
     def generate_endpoint_and_evaluate(self, depth : int, index : int, eval_func=None):
         '''
-        ADD
+        Method designed to be called in by a ThreadPool with a node address in the tree as parameters.
+        
+        :param depth (int): The depth of the current state in the tree.
+        :param index (int): The index of the node for the current state at selected depth.
+        :param eval_func: Any python object callable accepting a call with the two parameters observation and player and returns a value between -1 and 1.
+        
+        :returns queue (list): A nested list of queue list returned by self.get_value_at (see it's docstring for more details).
         '''
         
         node = index
@@ -199,7 +214,9 @@ class Minimax:
     
     def process_queue(self, queue):
         '''
-        ADD
+        Method for processing the queue result of the ThreadPool operations.
+        
+        :param queue (list): An unnested queue list for all changes in the tree to be made.
         '''
         
         for d, idx, var, val in queue:
@@ -214,7 +231,10 @@ class Minimax:
     
     def validate_proven(self, depth : int):
         '''
-        ADD
+        Method for validating the proven case in which the true values of all children are known.
+        Sets the value of any node in the tree at current depth to the value of the children if all children share the same value and are proven.
+        
+        :param depth (int): The depth of the current state in the tree.
         '''
         
         for parent_idx, parent_node in enumerate(self.tree[depth-1]):
@@ -241,9 +261,9 @@ class Minimax:
         
         :param depth (int): The depth of the current state in the tree.
         :param index (int): The index of the node for the current state at selected depth.
-        :param eval_func (func): Any python object which has a call function which accepts a call with the two parameters observation and player and returns a value between -1 and 1.
+        :param eval_func (func): Any python object callable accepting a call with the two parameters observation and player and returns a value between -1 and 1.
         
-        :returns (list): ADD
+        :returns queue (list): A list of tuples which contain the to-be-done changes in the tree structure in form of (depth,index,attribute_name,value).
         '''
         
         env = deepcopy(self.starting)
@@ -283,7 +303,6 @@ class Minimax:
         
         #case 2: there was a terminal index
         else:
-            #find value of terminal node
             value = 1 if env.winner == self.starting.turn else -1 #value is based on root node player perspective
             
             #move up the chain from last element until a visited node is reached, if still before terminal index, make proven terminal (also handle proven case of win -> parent loss)
@@ -293,15 +312,10 @@ class Minimax:
                 #make node visited
                 queue += [(d, idx,'visited',True)]
                 
-                #if depth lower or equal to terminal depth make proven and set value
-                if d >= terminal_depth-1:
+                #if depth lower or equal to terminal depth minus one make proven and set value (minus one since proven win equals proven loss of parent)
+                if d >= (terminal_depth-1):
                     queue += [(d, idx,'proven',True)]
-                    queue += [(d, idx,'value',value)]
-                    
-#                 #proven rule for terminal wins we handle here by overwriting the parent of terminal depth here even if already visited
-#                 if d == terminal_depth:
-#                     queue += [(d-1, self.tree[d][idx].parent,'proven',True)]
-#                     queue += [(d-1, self.tree[d][idx].parent,'value',value)] #since we use player perspective parent of terminal shares same value, no inversion to negative value
+                    queue += [(d, idx,'value',value)] #since we use player perspective parent of terminal shares same value, no inversion to negative value
                     
                 #increment depth and index
                 idx = self.tree[d][idx].parent
