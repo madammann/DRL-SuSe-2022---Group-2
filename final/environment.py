@@ -16,10 +16,10 @@ class ConnectFourEnv:
         :param reward_setting (dict): A dictionary with keys "step", "draw", and "win" with their respective rewards as integer.
         '''
         
+        if not (len(size) == 2 and size[0] >= 4 and size[1] >= 4):
+            print('Warning: Board size is invalid.')
+
         self.size = size
-        
-        if len(size) == 2 and size[0] >= 4 and size[1] >= 4:
-            self.size = size
             
         self._grid = np.zeros(self.size)
         self.action_space = Discrete(self.size[0]) #discrete action space over all columns of grid
@@ -70,39 +70,40 @@ class ConnectFourEnv:
         self.winner = None
 
         return (self.grid2obs(), int(self.turn)), tf.constant(self.terminal, dtype='bool')
-    
-    def _action(self, action : int) -> tuple:
+
+    def _action(self, action: int) -> tuple:
         '''
         The method which actually takes the action in the environment.
         Unavailable actions due to a full column automatically become the action higher, or in case of rightmost column, the leftmost option.
-        
+
         :param action (int): The action propagated from the step method.
-        
+
         :returns (tuple): The coordinates in self._grid where a change has taken place for validation whether the game has terminated.
         '''
-        
+
         start = action
-        while self._grid[self.size[0]-1][action] != 0:
-            action += 1
-            
-            if action >= self.size[0]:
+        while self._grid[self.size[0] - 1][action] != 0:
+
+            if action >= self.size[1] - 1:
                 action = 0
-                
+            else:
+                action += 1
+
             if action == start:
                 self.terminal = True
-                
+
                 return None
-        
+
         pos = (None, action)
         for i, space in enumerate(self._grid.T[action]):
             if space == 0:
                 pos = (i, pos[1])
-                
+
                 break
-        
+
         self._grid[pos] = 1 + int(self.turn)
         self.turn = not self.turn
-        
+
         return pos
     
     def grid2obs(self):
