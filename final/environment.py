@@ -8,7 +8,7 @@ class ConnectFourEnv:
     This is supposed to have the same functions, but creating one in OpenAI Gym seems like a bit overkill at the moment.
     '''
 
-    def __init__(self, size: tuple = (6, 7), reward_setting={'step': 1, 'draw': 10, 'win': 100}, compressed_obs_representation=False):
+    def __init__(self, size: tuple = (6, 7), reward_setting={'step': 1, 'win': 100, 'draw': 10, 'loose': -100}, compressed_obs_representation=False):
         '''
         Initialisation method for the environment.
 
@@ -22,8 +22,8 @@ class ConnectFourEnv:
         self.size = size
 
         self._grid = np.zeros(self.size)
-        self.action_space = Discrete(self.size[0])  # discrete action space over all columns of grid
-        self.action_range = range(self.size[0])
+        self.action_space = Discrete(self.size[1])  # discrete action space over all columns of grid
+        self.action_range = range(self.size[1])
         # TODO: Change observation space to include whose turn it is
         self.observation_space = Box(low=-1, high=1, shape=self.size, dtype='int')  # discrete space with 0 for no plate, -1 for red, 1 for blue
 
@@ -113,7 +113,7 @@ class ConnectFourEnv:
 
     def get_random_valid_action(self):
         # returns a valid random action
-        action = np.random.choice(range(self.size[1]) * self.get_valid_actions())
+        action = np.random.choice(self.action_range * self.get_valid_actions())
         return action
 
     def get_valid_actions(self):
@@ -207,10 +207,10 @@ class ConnectFourEnv:
 
         if self.terminal:
             if self.winner:
-                return tf.constant([self.reward_setting['win'], -self.reward_setting['win']], dtype='float32')
+                return tf.constant([self.reward_setting['win'], self.reward_setting['loose']], dtype='float32')
 
             else:
-                return tf.constant([-self.reward_setting['win'], self.reward_setting['win']], dtype='float32')
+                return tf.constant([self.reward_setting['loose'], self.reward_setting['win']], dtype='float32')
 
         else:
             return tf.constant([self.reward_setting['step']] * 2, dtype='float32')
