@@ -11,7 +11,7 @@ class ConnectFourEnv:
     def __init__(self, size: tuple = (6, 7), reward_setting={'step': 1, 'win': 100, 'draw': 10, 'loose': -100}, compressed_obs_representation=False):
         '''
         Initialisation method for the environment.
-
+        
         :param size (tuple): The size of the grid to be used in this environment.
         :param reward_setting (dict): A dictionary with keys "step", "draw", and "win" with their respective rewards as integer.
         '''
@@ -35,57 +35,59 @@ class ConnectFourEnv:
         self.reward_setting = reward_setting
         self.terminal = False
         self.winner = None
+        self.reward_setting = reward_setting
         self.turn = True
-
-    def step(self, action: int) -> tuple:
+        
+    def step(self, action : int) -> tuple:
         '''
         The step method which is used to take an action in the environment.
-
+        
         :param (int): A discrete action sampled from all actions in the action space for the size of this specific grid.
-
+        
         :returns (tuple): A tuple of observation (grid, turn), reward, and terminal boolean for the resulting state after the action taken.
         '''
-
+        
         pos = self._action(action)
-
+        
         if pos == None:
-            return (self.grid2obs(), int(self.turn)), tf.constant([self.reward_setting['draw']] * 2, dtype='float32'), tf.constant(self.terminal, dtype='bool')
+            return (self.grid2obs(), int(self.turn)), tf.constant([self.reward_setting['draw']] * 2, dtype='float32'), tf.constant(int(self.terminal), dtype='int16')
 
         self.terminal = self._verify_terminal(pos)
         reward = self._calculate_reward()
 
-        return (self.grid2obs(), int(self.turn)), reward, tf.constant(self.terminal, dtype='bool')
+        return (self.grid2obs(), int(self.turn)), reward, tf.constant(int(self.terminal), dtype='int16')
 
     def render(self):
         '''
         Here we could later create a pygame-based rendering or some form of printout of the environment observation.
         '''
-        print(np.flip(self._grid, 0).astype(int))
+        print(np.flip(self._grid,0).astype(int))
         print()
 
+    
     def reset(self):
         '''
         Resets the environment to the starting state.
 
         :returns (tuple): A tuple of observation (grid, turn) and terminal boolean for the resulting state after the action taken.
         '''
-
+        
         self._grid = np.zeros(self.size)
         self.terminal = False
         self.winner = None
 
-        return (self.grid2obs(), int(self.turn)), tf.constant(self.terminal, dtype='bool')
+        return (self.grid2obs(), int(self.turn)), tf.constant(int(self.terminal), dtype='int16')
 
     def _action(self, action: int) -> tuple:
         '''
         The method which actually takes the action in the environment.
         Unavailable actions due to a full column automatically become the action higher, or in case of rightmost column, the leftmost option.
-
+        
         :param action (int): The action propagated from the step method.
-
+        
         :returns (tuple): The coordinates in self._grid where a change has taken place for validation whether the game has terminated.
         '''
-
+        
         start = action
         while self._grid[self.size[0] - 1][action] != 0:
 
@@ -120,6 +122,7 @@ class ConnectFourEnv:
         #gets valid action possibilities - where columns aren't completely filled
         # return is an array of the board width's size with True where action is possible
         possible_actions = self._grid[self.size[0] - 1][:] == 0
+
         return possible_actions
 
     def grid2obs_2grids(self):
