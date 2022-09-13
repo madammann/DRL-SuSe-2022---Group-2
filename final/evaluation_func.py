@@ -28,7 +28,7 @@ class EvaluationFunction:
         values[1] = self.get_options_left_val(obs, player) * self.weights[1]
         values[2] = self.get_open_chains_val(obs, player) * self.weights[2]
         
-        return np.sum(values)
+        return np.divide(np.sum(values),3)
         
     def get_possible_wins_val(self, obs, player : bool):
         '''
@@ -46,7 +46,32 @@ class EvaluationFunction:
     
     def get_open_chains_val(self, obs, player : bool):
         '''
-        ADD
+        Evaluation function for calculating the value for open chain.
+        An open chain is any position where two or more plates align and there is still room to add more to either side.
+        The value for player A will be the normalized difference between open chains of player A and player B, with two plates weighted as +1 and three as +2.
+        
+        :obs (tf.Tensor): A tensor of shape (M,N,2) representing the current state.
+        :player (bool): Player from whose position to consider the evaluation (true == player one).
+        
+        :returns (float): A float value between -1 and 1.
         '''
         
-        pass
+        state = obs.numpy().astype('float32')
+        
+        #create states for player in 2D with oponents pieces as -1 
+        state_flat = None #ADD
+        
+        #create the necessary structuring elements for checking a 2D board for matches for two plates
+#         horizontal_d, diagonal_d = np.array([[1,1,0]]), np.array([[1,0],[0,1]])
+        
+        #create the necessary structuring elements for checking a 2D board for matches for two plates
+#         horizontal_t, diagonal_t = np.array([[1,1,1,0]]), np.array([[1,0,0],[0,1,0]])
+        
+        hits = np.zeros((8))
+        
+        
+        #calculate weighted difference of sums for each player
+        value = (hits[0]+hits[1])*2 + (hits[2]+hits[3])*3 - (hits[4]+hits[5])*2 - (hits[6]+hits[7])*3
+        value = None #ADD normalize
+        
+        return value

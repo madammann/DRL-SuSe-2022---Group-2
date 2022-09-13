@@ -1,0 +1,20 @@
+name: ConnectFourDRL
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+    - numpy
+    - pandas
+    - matplotlib
+    - gym
+    - gym[box2d]
+    - tensorflow_probability
+    - tensorflow-datasets
+    - tf-agents
+    - tensorflow
+    - h5py
+    - tqdm
+    - pygame
