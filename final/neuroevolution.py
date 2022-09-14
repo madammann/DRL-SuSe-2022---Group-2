@@ -1,4 +1,3 @@
-
 import neat
 import neat_visualize
 
