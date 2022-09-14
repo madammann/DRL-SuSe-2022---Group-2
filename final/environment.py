@@ -50,12 +50,12 @@ class ConnectFourEnv:
         pos = self._action(action)
         
         if pos == None:
-            return (self.grid2obs(), int(self.turn)), tf.constant([self.reward_setting['draw']] * 2, dtype='float32'), tf.constant(int(self.terminal), dtype='int16')
+            return self.grid2obs(), tf.constant([self.reward_setting['draw']] * 2, dtype='float32'), tf.constant(self.terminal, dtype='float32')
 
         self.terminal = self._verify_terminal(pos)
         reward = self._calculate_reward()
 
-        return (self.grid2obs(), int(self.turn)), reward, tf.constant(int(self.terminal), dtype='int16')
+        return self.grid2obs(), reward, tf.constant(self.terminal, dtype='float32')
 
     def render(self):
         '''
@@ -76,7 +76,7 @@ class ConnectFourEnv:
         self.terminal = False
         self.winner = None
 
-        return (self.grid2obs(), int(self.turn)), tf.constant(int(self.terminal), dtype='int16')
+        return self.grid2obs(), tf.constant(self.terminal, dtype='float32')
 
     def _action(self, action: int) -> tuple:
         '''
@@ -90,9 +90,9 @@ class ConnectFourEnv:
         
         start = action
         while self._grid[self.size[0] - 1][action] != 0:
-
             if action >= self.size[1] - 1:
                 action = 0
+                
             else:
                 action += 1
 
@@ -133,9 +133,10 @@ class ConnectFourEnv:
         :returns (tf.Tensor): An binary observation of shape (x, y, 2) will be returned in float32.
         '''
 
-        blue = np.array(self._grid == 2).astype('int16')
-        red = np.array(self._grid == 1).astype('int16')
-        obs = np.dstack([blue, red])
+        blue = np.array(self._grid == 2).astype('float32')
+        red = np.array(self._grid == 1).astype('float32')
+        turn = np.zeros(shape=self._grid.shape).astype('float32') if self.turn else np.ones(shape=self._grid.shape).astype('float32')
+        obs = np.dstack([blue, red, turn])
 
         # First color in return (here blue) and a 2 in grid is the player who has opened the game
 
