@@ -1,1 +1,14 @@
 NAME,MODEL,DATE,EPOCH,AVERAGE LOSS,AVERAGE RETURN,PATH
+primer_6x7,dqn_6x7,2022-09-14 23:37:16.304008,1,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-14 23:42:31.027219,2,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-14 23:47:28.925691,3,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-14 23:52:31.920551,4,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-14 23:57:52.116450,5,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-15 00:03:42.422280,6,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-15 00:10:00.722443,7,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-15 00:16:28.144295,8,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-15 00:23:09.477536,9,0.0,0.0,./weights/primers/p6by7.h5
+primer_6x7,dqn_6x7,2022-09-15 00:29:56.975701,10,0.0,0.0,./weights/primers/p6by7.h5
+primer_8x9,dqn_8x9,2022-09-15 00:36:57.809757,1,0.0,0.0,./weights/primers/p8by9.h5
+primer_8x9,dqn_8x9,2022-09-15 00:44:02.924379,2,0.0,0.0,./weights/primers/p8by9.h5
+primer_8x9,dqn_8x9,2022-09-15 00:51:09.981280,3,0.0,0.0,./weights/primers/p8by9.h5
