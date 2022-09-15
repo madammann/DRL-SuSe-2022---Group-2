@@ -252,7 +252,7 @@ def training(env, buffer, model_q, model_target, name : str, model_name : str, p
             results = ThreadPool(batch_size).starmap(do_episode, args)
 
             #we collect results for rewards and buffer_queue
-            rew_list = [results[0] for result in results]
+            rew_list = [result[0] for result in results]
             avg_reward += [sublst for lst in rew_list for sublst in lst]
             buffer_queue = [result[1] for result in results]
             buffer_queue = [sublst for lst in buffer_queue for sublst in lst] #we unnest the list of lists into one big list
@@ -278,14 +278,14 @@ def training(env, buffer, model_q, model_target, name : str, model_name : str, p
             epsilon = min_epsilon
 
         # we take the mean over the epoch and store it
-        avg_reward = 0.0
-        avg_loss = 0.0
+
         try:
             avg_reward = float(tf.reduce_mean(avg_reward).numpy())
             avg_loss = float(tf.reduce_mean(avg_loss).numpy())
         except:
-            pass
-        print('Epoch ' + str(epoch) + ' finished with an average reward of ' + str(avg_reward) + '.')
+            print("Warning: Average Reward or Loss faulty.")
+
+        print('Epoch ' + str(epoch) + ' finished with an average return of ' +  str(avg_reward) + ' and average loss of ' + str(avg_loss) + '.')
 
         #save weights of DQN after each epoch and append to the training data file
         model_q.save(path)
