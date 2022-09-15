@@ -5,6 +5,8 @@ from environment import ConnectFourEnv
 
 from minimax import MinimaxNode, Minimax
 from model import ConnectFourModel
+import neat
+import pickle
 
 from copy import deepcopy
 
@@ -14,7 +16,7 @@ class AgentBase:
     '''
     
     def __init__(self):
-        self.winrate = np.nan()
+        self.winrate = 0#np.nan()
         self.games = 0
 
 class MinimaxAgent(AgentBase):
@@ -66,26 +68,14 @@ class MinimaxAgent(AgentBase):
 
 class RandomAgent(AgentBase):
     '''
-    ADD
+    Agent playing a (valid) random move
     '''
     
-    def policy(self, env):
-        '''
-        ADD
-        '''
-        
-        policy = np.random.uniform(low=0, high=1, shape=(len(env.action_range)), dtype='float32')
-        
-        return policy
-    
     def select_move(self, env):
-        '''
-        ADD
-        '''
+
+        action = env.get_random_valid_action()
         
-        policy = self.policy(env)
-        
-        return np.argmax(policy)
+        return action
 
 class AvoidNextLossAgent(AgentBase):
     '''
@@ -132,7 +122,7 @@ class ModelAgent(AgentBase):
     ADD
     '''
     
-    #TBD Implenet a __init__ overwrite of parent class which allows for specific model loading
+    #TBD Implement a __init__ overwrite of parent class which allows for specific model loading
     def __init__(self, model_name : str):
         '''
         ADD
@@ -167,4 +157,45 @@ class ModelAgent(AgentBase):
         
         action = np.argmax(policy)
         
+        return action
+
+
+class NeuroevolutionAgent(AgentBase):
+    '''
+    Agent that uses an ANN previously trained via neuroevolution to make their move
+    '''
+
+    def __init__(self, model_name: str):
+
+        super(NeuroevolutionAgent, self).__init__()
+
+        #load model resulting from neuroevolution from file
+        genome_storage = open(model_name, 'rb')
+        model_genome, neat_config = pickle.load(genome_storage)
+        self.model = neat.nn.FeedForwardNetwork.create(model_genome, neat_config)
+
+        self.input_size = None  # add input sized for models by name here
+
+    def policy(self, env):
+
+        # change environment observation format to 1-grid representation
+        save_obs_setting = env.grid2obs
+        env.grid2obs = env.grid2obs_1grid
+
+        observation = env.grid2obs()
+
+        flat_observation = tf.reshape(observation, [-1]).numpy()  # Prepare observation for input
+        output = self.model.activate(flat_observation)
+
+        #restore observation format setting for environment
+        env.grid2obs = save_obs_setting
+
+        return output
+
+    def select_move(self, env):
+
+        policy = self.policy(env)
+
+        action = np.argmax(policy)
+
         return action
