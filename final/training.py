@@ -15,7 +15,7 @@ from datetime import datetime
 
 from tf_agents.replay_buffers import tf_uniform_replay_buffer
 
-def append_training_data(name : str, model : str, epoch : int, average_loss : float, average_return : float, path : str):
+def append_training_data(name : str, model : str, epoch : int, epsilon : float, average_loss : float, average_return : float, path : str):
     '''
     Function to add the data from training to the training data csv file for later analysis.
 
@@ -28,7 +28,7 @@ def append_training_data(name : str, model : str, epoch : int, average_loss : fl
 
     date = str(datetime.now())
 
-    appendix = pd.DataFrame([[name, model, date, epoch, average_loss, average_return, path]],columns=['NAME','MODEL','DATE','EPOCH','AVERAGE LOSS','AVERAGE RETURN', 'PATH'])
+    appendix = pd.DataFrame([[name, model, date, epoch, epsilon, average_loss, average_return, path]],columns=['NAME','MODEL','DATE','EPOCH','EPSILON','AVERAGE LOSS','AVERAGE RETURN', 'PATH'])
 
     df = None
     try:
@@ -172,7 +172,7 @@ def do_episode(env, model, epsilon = 0.1):
 
         if np.random.random() < epsilon:
             #choosing exploration: take random action
-            action = tf.constant(env.action_space.sample(), dtype='float32')
+            action = tf.constant(env.get_random_valid_action(), dtype='float32')
 
         else:
             #choosing greedy action: we input the observation to the model and chose a discrete action by applying the argmax over the output
@@ -193,7 +193,7 @@ def do_episode(env, model, epsilon = 0.1):
 
     return reward_sum, buffer_queue
 
-def training(env, buffer, model_q, model_target, name : str, model_name : str, path : str, episodes=100, epochs=100, update_target_network_every=2, epsilon=0.9, epsilon_decay=0.02, min_epsilon = 0.1):
+def training(env, buffer, model_q, model_target, name : str, model_name : str, path : str, episodes=100, epochs=100, update_target_network_every=2, epsilon=0.9, epsilon_decay=0.005, min_epsilon = 0.2):
     '''
     Function for training the DQN using the target model, environment, and experience replay buffer.
     Stores weights and training data every epoch.
@@ -289,6 +289,6 @@ def training(env, buffer, model_q, model_target, name : str, model_name : str, p
 
         #save weights of DQN after each epoch and append to the training data file
         model_q.save(path)
-        append_training_data(name, model_name, epoch+1, avg_loss, avg_reward, path)
+        append_training_data(name, model_name, epoch+1, epsilon, avg_loss, avg_reward, path)
 
     print('Completed training epochs for selected model.')
