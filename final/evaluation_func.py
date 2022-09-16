@@ -58,7 +58,7 @@ class EvaluationFunction:
         
         state = obs.numpy().astype('float32')
         
-        #create states for player in 2D with oponents pieces as -1 
+        #create states for player in 2D with oponents pieces as 2 and empty as 3 
         state_flat = None #ADD
         
         #create the necessary structuring elements for checking a 2D board for matches for two plates
@@ -75,3 +75,36 @@ class EvaluationFunction:
         value = None #ADD normalize
         
         return value
+    
+#     def convolve_1D_hits(lines : list, element):
+#         '''
+#         ADD
+#         '''
+        
+#         element_len = element.shape[0]
+        
+#         for i, line in enumerate(lines):
+#             np.pad
+            
+        
+#         hits = 0
+#         for line in lines:
+#             for i, val in enumerate(line):
+#                 if line[i:]
+        
+#         return hits
+    
+#     def lineify(grid):
+#         '''
+#         ADD
+#         '''
+        
+#         lines = []
+#         manips = []
+        
+        
+        
+#         for line in grid:
+#             lines += line
+        
+        
