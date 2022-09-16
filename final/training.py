@@ -33,6 +33,7 @@ def append_training_data(name : str, model : str, epoch : int, epsilon : float, 
     df = None
     try:
         df = pd.read_csv('./training_data.csv',index_col=None)
+        
     except:
         raise FileNotFoundError('Unable to load the training data csv file.')
 
@@ -242,11 +243,10 @@ def training(env, buffer, model_q, model_target, name : str, model_name : str, p
             batch = tf.nest.map_structure(lambda t: tf.stack([t]),values)
             buffer.add_batch(batch)
 
-
     for epoch in range(epochs):
         avg_reward, avg_loss = [], []
 
-        for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch) + '/' + str(epochs) + ':'):
+        for episode in tqdm(range(episodes),desc='Progress for epoch ' + str(epoch+1) + '/' + str(epochs) + ':'):
             #we do n training episodes in multithreading
             args = [(env, model_q, epsilon) for _ in range(batch_size)]
             results = ThreadPool(batch_size).starmap(do_episode, args)
@@ -278,12 +278,8 @@ def training(env, buffer, model_q, model_target, name : str, model_name : str, p
             epsilon = min_epsilon
 
         # we take the mean over the epoch and store it
-
-        try:
-            avg_reward = float(tf.reduce_mean(avg_reward).numpy())
-            avg_loss = float(tf.reduce_mean(avg_loss).numpy())
-        except:
-            print("Warning: Average Reward or Loss faulty.")
+        avg_reward = float(tf.reduce_mean(avg_reward).numpy())
+        avg_loss = float(tf.reduce_mean(avg_loss).numpy())
 
         print('Epoch ' + str(epoch) + ' finished with an average return of ' +  str(avg_reward) + ' and average loss of ' + str(avg_loss) + '.')
 
