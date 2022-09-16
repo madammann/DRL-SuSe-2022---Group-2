@@ -16,62 +16,74 @@ class AgentBase:
     '''
     
     def __init__(self):
-        self.winrate = 0#np.nan()
-        self.games = 0
+        self.wins = 0
+        self.losses = 0
+        self.average_speed = 0
+    
+    def reset(self):
+        self.wins = 0
+        self.losses = 0
+        self.average_speed = 0
+        
+    def __str__(self):
+        '''
+        ADD
+        '''
+        
+        return f'Agent performance {self.wins, self.losses, self.wins+self.losses} with avg speed {self.average_speed} secs/move.'
 
 class MinimaxAgent(AgentBase):
     '''
     ADD
     '''
     
-    def policy(self, env):
+    def policy(self, env, eval_func=None):
         '''
         ADD
         '''
         
-        self.depthmax = self.select_appropriate_depthmax(env)
-        tree = Minimax(env, depthmax=self.depthmax)
+        tree = Minimax(env, depthmax=3)
         
-        policy = tree(env.turn)
+        policy = tree(env.turn, eval_func=eval_func)
         
         return policy
     
-    def select_move(self, env):
+    def select_move(self, env, eval_func=None):
         '''
         ADD
         '''
         
-        policy = self.policy(env)
+        policy = self.policy(env, eval_func=eval_func)
         
         action = np.argmax(policy)
         
         return action
     
-    def select_appropriate_depthmax(self, env):
-        '''
-        ADD
-        '''
+#     def select_appropriate_depthmax(self, env):
+#         '''
+#         ADD
+#         '''
         
-        branching_factor = len(env.action_range)
-        node_max = 10e8
+#         branching_factor = len(env.action_range)
+#         node_max = 10e8
         
-        nodes = branching_factor
-        depth = 1
-        while True:
-            nodes += nodes*branching_factor
+#         nodes = branching_factor
+#         depth = 1
+#         while True:
+#             nodes += nodes*branching_factor
             
-            if nodes <= node_max:
-                depth += 1
+#             if nodes <= node_max:
+#                 depth += 1
                 
-            else:
-                return depth
+#             else:
+#                 return depth
 
 class RandomAgent(AgentBase):
     '''
     Agent playing a (valid) random move
     '''
     
-    def select_move(self, env):
+    def select_move(self, env, eval_func=None):
 
         action = env.get_random_valid_action()
         
@@ -93,7 +105,7 @@ class AvoidNextLossAgent(AgentBase):
         
         return policy
     
-    def select_move(self, env):
+    def select_move(self, env, eval_func=None):
         '''
         ADD
         '''
@@ -148,7 +160,7 @@ class ModelAgent(AgentBase):
         
         return policy
     
-    def select_move(self, env):
+    def select_move(self, env, eval_func=None):
         '''
         ADD
         '''
@@ -157,7 +169,7 @@ class ModelAgent(AgentBase):
         
         action = np.argmax(policy)
         
-        return action
+        return int(action)
 
 
 class NeuroevolutionAgent(AgentBase):
@@ -165,19 +177,25 @@ class NeuroevolutionAgent(AgentBase):
     Agent that uses an ANN previously trained via neuroevolution to make their move
     '''
 
-    def __init__(self, model_name: str):
+    def __init__(self, path: str):
+        '''
+        ADD
+        '''
 
         super(NeuroevolutionAgent, self).__init__()
 
         #load model resulting from neuroevolution from file
-        genome_storage = open(model_name, 'rb')
+        genome_storage = open(path, 'rb')
         model_genome, neat_config = pickle.load(genome_storage)
         self.model = neat.nn.FeedForwardNetwork.create(model_genome, neat_config)
 
         self.input_size = None  # add input sized for models by name here
 
     def policy(self, env):
-
+        '''
+        ADD
+        '''
+        
         # change environment observation format to 1-grid representation
         save_obs_setting = env.grid2obs
         env.grid2obs = env.grid2obs_1grid
@@ -192,10 +210,13 @@ class NeuroevolutionAgent(AgentBase):
 
         return output
 
-    def select_move(self, env):
+    def select_move(self, env, eval_func=None):
+        '''
+        ADD
+        '''
 
         policy = self.policy(env)
 
         action = np.argmax(policy)
 
-        return action
+        return int(action)
