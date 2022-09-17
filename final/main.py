@@ -18,9 +18,10 @@ parser = argparse.ArgumentParser(description='Script for running the training an
 parser.add_argument('--primer', default='False') #whether to run a primer training meaning all other arguments are obsolete
 parser.add_argument('--training', default='True') #whether training or evaluation shall be run, if evaluation then statistics will be gathered instead
 parser.add_argument('--model') #the model to be used, has to be specified in order to run this script
-parser.add_argument('--epochs', default='200') #the number of 100 episode epochs to run
+parser.add_argument('--epochs', default='10') #the number of 100 episode epochs to run
 parser.add_argument('--path', default='False') #has to be specified if training mode is run and no primer, will be the weights path
 parser.add_argument('--pretrained', default='False') #path if training is to be resumed from weights has to match path
+parser.add_argument('--epsilon') #starting epsilon to use for resuming training
 
 args = parser.parse_args()
 
@@ -67,6 +68,10 @@ if __name__ == "__main__":
         raise ValueError('A path for the saved weights needs to be specified if not running a primer or eval mode.')
 
     instance_name = create_training_tag(args)
+    
+    epsilon = 0.9
+    if args.epsilon != None:
+        epsilon = float(args.epsilon)
 
     #checks selected model params, if selected, also raises error if no model selected and training mode and no primer is selected
     if args.model == None and not args.primer == 'True' and args.training == 'True':
@@ -74,22 +79,22 @@ if __name__ == "__main__":
 
     if args.model == "6x7":
         env, buffer, model_q, model_target = initialize_models((6,7), path=path)
-        training(env, buffer, model_q, model_target, instance_name, "dqn_6x7", args.path, epochs=int(args.epochs))
+        training(env, buffer, model_q, model_target, instance_name, "dqn_6x7", args.path, epochs=int(args.epochs), epsilon=epsilon)
         exit()
 
     elif args.model == "8x9":
         env, buffer, model_q, model_target = initialize_models((8,9), path=path)
-        training(env, buffer, model_q, model_target, instance_name, "dqn_8x9", args.path, epochs=int(args.epochs))
+        training(env, buffer, model_q, model_target, instance_name, "dqn_8x9", args.path, epochs=int(args.epochs), epsilon=epsilon)
         exit()
 
     elif args.model == "10x11":
         env, buffer, model_q, model_target = initialize_models((10,11), path=path)
-        training(env, buffer, model_q, model_target, instance_name, "dqn_10x11", args.path, epochs=int(args.epochs))
+        training(env, buffer, model_q, model_target, instance_name, "dqn_10x11", args.path, epochs=int(args.epochs), epsilon=epsilon)
         exit()
 
     elif args.model == "12x13":
         env, buffer, model_q, model_target = initialize_models((12,13), path=path)
-        training(env, buffer, model_q, model_target, instance_name, "dqn_12x13", args.path, epochs=int(args.epochs))
+        training(env, buffer, model_q, model_target, instance_name, "dqn_12x13", args.path, epochs=int(args.epochs), epsilon=epsilon)
         exit()
 
     elif not args.primer == 'True':
@@ -103,3 +108,4 @@ if __name__ == "__main__":
     #evaluation mode
     else:
         exit() #TODO: handle eval mode later in here
+        #has actually been moved to notebook now

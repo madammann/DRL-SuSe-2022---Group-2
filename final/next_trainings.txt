@@ -1,0 +1,7 @@
+Johannes:
+python main.py --training "True" --pretrained "True" --path "./weights/d8by9.h5" --epsilon "0.1701581912823779" --epochs "24" --model "dqn_8x9"
+python main.py --training "True" --pretrained "True" --path "./weights/d10by11.h5" --epsilon "0.1814159800674375" --epochs "25" --model "dqn_10x11"
+
+Marlon:
+python main.py --training "True" --pretrained "True" --path "./weights/d6by7.h5" --epsilon "0.1" --epochs "26" --model "dqn_6x7"
+python main.py --training "True" --pretrained "True" --path "./weights/d12by13.h5" --epsilon "0.2664474769468798" --epochs "31" --model "dqn_12x13"
