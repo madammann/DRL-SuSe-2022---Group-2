@@ -2,6 +2,8 @@ import numpy as np
 
 from environment import ConnectFourEnv
 
+#this script was work in progress but has been scrapped since minimax is already good enough in it's current form and there is not enough time or priority for it.
+
 class EvaluationFunction:
     '''
     ADD

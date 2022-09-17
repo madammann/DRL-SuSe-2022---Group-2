@@ -83,7 +83,7 @@ class RandomAgent(AgentBase):
     Agent playing a (valid) random move
     '''
     
-    def select_move(self, env, eval_func=None):
+    def select_move(self, env):
 
         action = env.get_random_valid_action()
         
@@ -105,7 +105,7 @@ class AvoidNextLossAgent(AgentBase):
         
         return policy
     
-    def select_move(self, env, eval_func=None):
+    def select_move(self, env):
         '''
         ADD
         '''
@@ -142,8 +142,29 @@ class ModelAgent(AgentBase):
         
         super(ModelAgent, self).__init__()
         
-        self.model = None #load a specific model here
-        self.input_size = None #add input sized for models by name here
+        self.model = None
+        if model_name == 'd6by7':
+            self.model = ConnectFourModel((6,7), 0.002)
+            self.model(tf.random.normal((1, 6, 7, 3)))
+            self.model.load('./weights/d6by7.h5')
+            
+        elif model_name == 'd8by9':
+            self.model = ConnectFourModel((8,9), 0.002)
+            self.model(tf.random.normal((1, 8, 9, 3)))
+            self.model.load('./weights/d8by9.h5')
+        
+        elif model_name == 'd10by11':
+            self.model = ConnectFourModel((10,11), 0.002)
+            self.model(tf.random.normal((1, 10, 11, 3)))
+            self.model.load('./weights/d10by11.h5')
+        
+        elif model_name == 'd12by13':
+            self.model = ConnectFourModel((12,13), 0.002)
+            self.model(tf.random.normal((1, 12, 13, 3)))
+            self.model.load('./weights/d12by13.h5')
+        
+        else:
+            raise ValueError('The model which was requested is not supported or does not exist.')
         
     def policy(self, env):
         '''
@@ -151,16 +172,12 @@ class ModelAgent(AgentBase):
         '''
         
         obs = env.grid2obs()
-        input_size = tuple(obs.shape) #may not work change after testing
         
-        if input_size != self.input_size:
-            raise ValueError('Model does not support input shape of passed environment.')
-        
-        policy = self.model(obs).numpy()
+        policy = self.model(tf.expand_dims(obs,axis=0)).numpy()
         
         return policy
     
-    def select_move(self, env, eval_func=None):
+    def select_move(self, env):
         '''
         ADD
         '''
@@ -210,7 +227,7 @@ class NeuroevolutionAgent(AgentBase):
 
         return output
 
-    def select_move(self, env, eval_func=None):
+    def select_move(self, env):
         '''
         ADD
         '''
