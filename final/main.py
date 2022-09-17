@@ -18,7 +18,7 @@ parser = argparse.ArgumentParser(description='Script for running the training an
 parser.add_argument('--primer', default='False') #whether to run a primer training meaning all other arguments are obsolete
 parser.add_argument('--training', default='True') #whether training or evaluation shall be run, if evaluation then statistics will be gathered instead
 parser.add_argument('--model') #the model to be used, has to be specified in order to run this script
-parser.add_argument('--epochs', default='100') #the number of 100 episode epochs to run
+parser.add_argument('--epochs', default='200') #the number of 100 episode epochs to run
 parser.add_argument('--path', default='False') #has to be specified if training mode is run and no primer, will be the weights path
 parser.add_argument('--pretrained', default='False') #path if training is to be resumed from weights has to match path
 
@@ -46,11 +46,12 @@ def run_primer():
     grid_sizes = [(6,7),(8,9),(10,11),(12,13)]
     paths = ["./weights/primers/p6by7.h5","./weights/primers/p8by9.h5","./weights/primers/p10by11.h5","./weights/primers/p12by13.h5"]
     epochs = 10
-    episodes = 100
+    episodes = 50
 
     for i in range(len(names)):
         env, buffer, model_q, model_target = initialize_models(grid_sizes[i], path=None)
         training(env, buffer, model_q, model_target, names[i], model_names[i], paths[i], episodes=episodes, epochs=epochs)
+
 
 if __name__ == "__main__":
     '''

@@ -52,7 +52,7 @@ def update_target_network(model_a, model_b):
     for target_variable, source_variable in zip(model_b.trainable_variables, model_a.trainable_variables):
         target_variable.assign(source_variable)
 
-def initialize_models(grid_size=(6,7), learning_rate=0.001, path=None):
+def initialize_models(grid_size=(6,7), learning_rate=0.002, path=None):
     '''
     Function to help with initialization of environment, models and general utility.
 
@@ -194,7 +194,7 @@ def do_episode(env, model, epsilon = 0.1):
 
     return reward_sum, buffer_queue
 
-def training(env, buffer, model_q, model_target, name : str, model_name : str, path : str, episodes=100, epochs=100, update_target_network_every=2, epsilon=0.9, epsilon_decay=0.005, min_epsilon = 0.2):
+def training(env, buffer, model_q, model_target, name : str, model_name : str, path : str, episodes=50, epochs=200, update_target_network_every=2, epsilon=0.9, epsilon_decay=0.002, min_epsilon = 0.1):
     '''
     Function for training the DQN using the target model, environment, and experience replay buffer.
     Stores weights and training data every epoch.
