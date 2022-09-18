@@ -112,6 +112,12 @@ class AvoidNextLossAgent(AgentBase):
         
         policy = self.policy(env)
         choice = np.argmax(policy)
+        argsorted = np.argsort(policy)[::-1]
+        
+        #if there two or more choices are equally good, make a random choice between the n max elements
+        if policy[argsorted[0]] == policy[argsorted[1]]:
+            indices = np.where(policy == policy[argsorted[0]])[0]
+            choice = np.random.choice(indices)
         
         return choice
 
