@@ -99,7 +99,7 @@ class AvoidNextLossAgent(AgentBase):
         ADD
         '''
 
-        policy = np.full((10), 1, dtype='float32')
+        policy = np.full((len(env.action_range)), 1, dtype='float32')
     
         args = [deepcopy(env) for _ in range(len(env.action_range))]
         
